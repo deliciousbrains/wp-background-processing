@@ -28,6 +28,7 @@ abstract class WP_Async_Request {
 	public function __construct() {
 		$this->identifier = $this->prefix . '_' . $this->action;
 
+		add_action( 'wp_ajax_' . $this->identifier, array( $this, 'maybe_handle' ) );
 		add_action( 'wp_ajax_nopriv_' . $this->identifier, array( $this, 'maybe_handle' ) );
 	}
 
@@ -99,6 +100,7 @@ abstract class WP_Async_Request {
 			'timeout'   => 0.01,
 			'blocking'  => false,
 			'body'      => $this->data,
+			'cookies'   => $_COOKIE,
 			'sslverify' => apply_filters( 'https_local_ssl_verify', false ),
 		);
 	}

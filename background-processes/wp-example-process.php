@@ -20,7 +20,12 @@ class WP_Example_Process extends WP_Background_Process {
 	 * @return mixed
 	 */
 	protected function task( $item ) {
-		// Task
+		// Spoof long running process
+		sleep( 5 );
+
+		error_log( $item );
+
+		return false;
 	}
 
 	/**

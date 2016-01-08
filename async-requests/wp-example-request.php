@@ -14,7 +14,10 @@ class WP_Example_Request extends WP_Async_Request {
 	 * during the async request.
 	 */
 	protected function handle() {
-		// Task
+		// Spoof long running process
+		sleep( 5 );
+
+		error_log( $_POST['name'] );
 	}
 
 }
