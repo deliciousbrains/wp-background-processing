@@ -2,6 +2,8 @@
 
 class WP_Example_Process extends WP_Background_Process {
 
+	use WP_Example_Logger;
+
 	/**
 	 * @var string
 	 */
@@ -20,10 +22,10 @@ class WP_Example_Process extends WP_Background_Process {
 	 * @return mixed
 	 */
 	protected function task( $item ) {
-		// Spoof long running process
-		sleep( 5 );
+		$message = $this->get_message( $item );
 
-		error_log( $item );
+		$this->really_long_running_task();
+		$this->log( $message );
 
 		return false;
 	}

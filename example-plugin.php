@@ -26,6 +26,7 @@ class Example_Background_Processing {
 	 * Example_Background_Processing constructor.
 	 */
 	public function __construct() {
+		require_once plugin_dir_path( __FILE__ ) . 'example-plugin-logger.php';
 		require_once plugin_dir_path( __FILE__ ) . 'wp-async-request.php';
 		require_once plugin_dir_path( __FILE__ ) . 'wp-background-process.php';
 		require_once plugin_dir_path( __FILE__ ) . 'async-requests/wp-example-request.php';

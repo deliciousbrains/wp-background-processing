@@ -2,6 +2,8 @@
 
 class WP_Example_Request extends WP_Async_Request {
 
+	use WP_Example_Logger;
+
 	/**
 	 * @var string
 	 */
@@ -14,10 +16,10 @@ class WP_Example_Request extends WP_Async_Request {
 	 * during the async request.
 	 */
 	protected function handle() {
-		// Spoof long running process
-		sleep( 5 );
+		$message = $this->get_message( $_POST['name'] );
 
-		error_log( $_POST['name'] );
+		$this->really_long_running_task();
+		$this->log( $message );
 	}
 
 }
