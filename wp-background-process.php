@@ -17,23 +17,23 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	/**
 	 * @var string
 	 */
-	protected $cron_hook;
+	protected $cron_hook_identifier;
 
 	/**
 	 * @var string
 	 */
-	protected $cron_interval;
+	protected $cron_interval_identifier;
 
 	/**
 	 * Initiate new background process
 	 */
 	public function __construct() {
-		$this->cron_hook     = $this->identifier . '_cron';
-		$this->cron_interval = $this->identifier . '_cron_interval';
-
 		parent::__construct();
 
-		add_action( $this->cron_hook, array( $this, 'handle_cron_healthcheck' ) );
+		$this->cron_hook_identifier     = $this->identifier . '_cron';
+		$this->cron_interval_identifier = $this->identifier . '_cron_interval';
+
+		add_action( $this->cron_hook_identifier, array( $this, 'handle_cron_healthcheck' ) );
 		add_filter( 'cron_schedules', array( $this, 'schedule_cron_healthcheck' ) );
 	}
 
@@ -385,7 +385,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 		$interval = apply_filters( $this->identifier . '_cron_interval', 5 );
 
 		if ( property_exists( $this, 'cron_interval' ) ) {
-			$interval = apply_filters( $this->identifier . '_cron_interval', $this->cron_interval );
+			$interval = apply_filters( $this->identifier . '_cron_interval', $this->cron_interval_identifier );
 		}
 
 		// Adds every 5 minutes to the existing schedules.
@@ -422,8 +422,8 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * Schedule event
 	 */
 	protected function schedule_event() {
-		if ( ! wp_next_scheduled( $this->cron_hook ) ) {
-			wp_schedule_event( time(), $this->cron_interval, $this->cron_hook );
+		if ( ! wp_next_scheduled( $this->cron_hook_identifier ) ) {
+			wp_schedule_event( time(), $this->cron_interval_identifier, $this->cron_hook_identifier );
 		}
 	}
 
@@ -431,10 +431,10 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * Clear scheduled event
 	 */
 	protected function clear_scheduled_event() {
-		$timestamp = wp_next_scheduled( $this->cron_hook );
+		$timestamp = wp_next_scheduled( $this->cron_hook_identifier );
 
 		if ( $timestamp ) {
-			wp_unschedule_event( $timestamp, $this->cron_hook );
+			wp_unschedule_event( $timestamp, $this->cron_hook_identifier );
 		}
 	}
 
