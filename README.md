@@ -122,7 +122,7 @@ Optionally contain any logic to perform once the queue has completed.
 
 ##### Dispatching Processes
 
-Instantiate your request:
+Instantiate your process:
 
 `$this->example_process = new WP_Example_Process();`
 
