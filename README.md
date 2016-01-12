@@ -57,6 +57,8 @@ Chaining is also supported:
 
 ### Background Process
 
+Extend the `WP_Background_Process` class:
+
 ```
 class WP_Example_Process extends WP_Background_Process {
 
@@ -104,8 +106,26 @@ Should be set to a unique name.
 
 #### `protected function task( $item )`
 
-Should contain any logic to perform on the queued item. Return `false` to remove the item from the queue or return `$item` to push it back onto the queue for further processing. If the item has been modified before being pushed back onto the queue the current state will be saved before the batch is exited.
+Should contain any logic to perform on the queued item. Return `false` to remove the item from the queue or return `$item` to push it back onto the queue for further processing. If the item has been modified and is pushed back onto the queue the current state will be saved before the batch is exited.
 
 #### `protected function complete()`
 
 Optionally contain any logic to perform once the queue has completed.
+
+#### Dispatching Processes
+
+Instantiate your request:
+
+`$this->example_process = new WP_Example_Process();`
+
+Push items to the queue:
+
+```
+foreach ( $items as $item ) {
+    $this->example_process->push_to_queue( $item );
+}
+```
+
+Save and dispatch the queue:
+
+`$this->example_process->save()->dispatch();`
