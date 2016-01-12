@@ -31,15 +31,15 @@ class WP_Example_Request extends WP_Async_Request {
 }
 ```
 
-#### `protected $action`
+##### `protected $action`
 
 Should be set to a unique name.
 
-#### `protected function handle()`
+##### `protected function handle()`
 
 Should contain any logic to perform during the non-blocking request. The data passed to the request will be accessible via `$_POST`.
 
-#### Dispatching Requests
+##### Dispatching Requests
 
 Instantiate your request:
 
@@ -108,19 +108,19 @@ class WP_Example_Process extends WP_Background_Process {
 }
 ```
 
-#### `protected $action`
+##### `protected $action`
 
 Should be set to a unique name.
 
-#### `protected function task( $item )`
+##### `protected function task( $item )`
 
 Should contain any logic to perform on the queued item. Return `false` to remove the item from the queue or return `$item` to push it back onto the queue for further processing. If the item has been modified and is pushed back onto the queue the current state will be saved before the batch is exited.
 
-#### `protected function complete()`
+##### `protected function complete()`
 
 Optionally contain any logic to perform once the queue has completed.
 
-#### Dispatching Processes
+##### Dispatching Processes
 
 Instantiate your request:
 
