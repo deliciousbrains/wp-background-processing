@@ -6,6 +6,8 @@ Inspired by [TechCrunch WP Asynchronous Tasks](https://github.com/techcrunch/wp-
 
 ### Async Request
 
+Async requests are useful for pushing slow one-off tasks such as sending emails to a background process. Once the request has been dispatched it will process in the background instantly.
+
 Extend the `WP_Async_Request` class:
 
 ```
@@ -56,6 +58,12 @@ Chaining is also supported:
 `$this->example_request->data( array( 'data' => $data )->dispatch();`
 
 ### Background Process
+
+Background processes work in a similar fashion to async requests but they allow you to queue tasks. Items pushed onto the queue will be processed in the background once the queue has been dispatched. Queues will also scale based on available server resources, so higher end servers will process more items per batch.
+
+Health checks run by default every 5 minutes to ensure the queue is running when queued items exist. If the queue has failed it will be restarted.
+
+Queues work on a first in first out basis, which allows additional items to be pushed to the queue even if it’s already processing.
 
 Extend the `WP_Background_Process` class:
 
