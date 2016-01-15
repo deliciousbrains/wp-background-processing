@@ -47,7 +47,7 @@ Instantiate your request:
 
 Add data to the request if required:
 
-`$this->example_request->data( array( 'value1' => $value1, 'value2' => $value2 );`
+`$this->example_request->data( array( 'value1' => $value1, 'value2' => $value2 ) );`
 
 Fire off the request:
 
@@ -55,7 +55,7 @@ Fire off the request:
 
 Chaining is also supported:
 
-`$this->example_request->data( array( 'data' => $data )->dispatch();`
+`$this->example_request->data( array( 'data' => $data ) )->dispatch();`
 
 ### Background Process
 
