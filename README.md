@@ -4,6 +4,8 @@ WP Background Processing can be used to fire off non-blocking asynchronous reque
 
 Inspired by [TechCrunch WP Asynchronous Tasks](https://github.com/techcrunch/wp-async-task).
 
+__Requires PHP 5.2.__
+
 ### Async Request
 
 Async requests are useful for pushing slow one-off tasks such as sending emails to a background process. Once the request has been dispatched it will process in the background instantly.
