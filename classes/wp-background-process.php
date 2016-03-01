@@ -31,6 +31,15 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		protected $current_job;
 
 		/**
+		 * Time in seconds to release locked jobs back onto the queue.
+		 * This allows failed jobs to be attempted again, if the
+		 * queue worker timed out before releasing the job.
+		 *
+		 * @var int|false
+		 */
+		protected $release_time = 60;
+
+		/**
 		 * Initiate new background process
 		 */
 		public function __construct() {
@@ -87,7 +96,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 */
 		public function update( $data ) {
 			if ( ! empty( $data ) ) {
-				update_site_option( $key, $data );
+//				update_site_option( $key, $data );
 			}
 
 			return $this;
@@ -104,11 +113,11 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 			global $wpdb;
 
 			$table = $wpdb->prefix . 'queue';
-			$data  = array(
+			$where = array(
 				'id' => $job->id,
 			);
 
-			$wpdb->delete( $table, $data );
+			$wpdb->delete( $table, $where );
 
 			return $this;
 		}
@@ -205,6 +214,8 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		protected function get_job() {
 			global $wpdb;
 
+			$this->maybe_release_locked_jobs();
+
 			$sql = "SELECT * FROM {$wpdb->prefix}queue
 					WHERE locked = 0
 					ORDER BY created_at ASC";
@@ -265,20 +276,44 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 *
 		 * @return $this
 		 */
-		protected function lock_job( $job )
-		{
+		protected function lock_job( $job ) {
 			global $wpdb;
 
 			$table = $wpdb->prefix . 'queue';
-			$data = array(
-				'locked' => 1,
+			$data  = array(
+				'locked'    => 1,
+				'locked_at' => current_time( 'mysql', true ),
+			);
+			$where = array(
+				'id' => $job->id,
 			);
 
-			$wpdb->update( $table, $data, array(
-				'id' => $job->id,
-			) );
+			$wpdb->update( $table, $data, $where );
 
 			return $this;
+		}
+
+		/**
+		 * Maybe release locked jobs.
+		 */
+		protected function maybe_release_locked_jobs()
+		{
+			if ( false === $this->release_time ) {
+				return;
+			}
+
+			global $wpdb;
+
+			$expired = gmdate( 'Y-m-d H:i:s', time() - $this->release_time );
+
+			$sql = $wpdb->prepare( "
+				UPDATE {$wpdb->prefix}queue
+				SET locked = 0, locked_at = NULL
+				WHERE locked = 1
+				AND locked_at <= %s"
+			, $expired );
+
+			$wpdb->query( $sql );
 		}
 
 		/**
