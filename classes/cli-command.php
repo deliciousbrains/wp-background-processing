@@ -28,6 +28,7 @@ class CLI_Command extends WP_CLI_Command {
 				id bigint(20) NOT NULL AUTO_INCREMENT,
                 action varchar(255) NOT NULL,
                 data longtext NOT NULL,
+                attempts tinyint(1) NOT NULL DEFAULT 0,
                 locked tinyint(1) NOT NULL DEFAULT 0,
                 locked_at datetime DEFAULT NULL,
                 created_at datetime NOT NULL,

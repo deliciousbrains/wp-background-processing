@@ -308,7 +308,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 
 			$sql = $wpdb->prepare( "
 				UPDATE {$wpdb->prefix}queue
-				SET locked = 0, locked_at = NULL
+				SET attempts = attempts + 1, locked = 0, locked_at = NULL
 				WHERE locked = 1
 				AND locked_at <= %s"
 			, $expired );
