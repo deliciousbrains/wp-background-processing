@@ -4,7 +4,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 	abstract class WP_Background_Process extends WP_Async_Request {
 
 		/**
-		 * @var
+		 * @var string
 		 */
 		protected $action = 'background_process';
 
@@ -24,6 +24,11 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 * @var string
 		 */
 		protected $cron_interval_identifier;
+
+		/**
+		 * @var object
+		 */
+		protected $current_job;
 
 		/**
 		 * Initiate new background process
@@ -54,27 +59,21 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		/**
 		 * Push to queue
 		 *
-		 * @param mixed $data
+		 * @param mixed $job
 		 *
 		 * @return $this
 		 */
-		public function push_to_queue( $data ) {
-			$this->data[] = $data;
+		public function push_to_queue( $job ) {
+			global $wpdb;
 
-			return $this;
-		}
+			$table = $wpdb->prefix . 'queue';
+			$data  = array(
+				'action'     => $this->action,
+				'data'       => maybe_serialize( $job ),
+				'created_at' => current_time( 'mysql', true ),
+			);
 
-		/**
-		 * Save queue
-		 *
-		 * @return $this
-		 */
-		public function save() {
-			$key = $this->generate_key();
-
-			if ( ! empty( $this->data ) ) {
-				update_site_option( $key, $this->data );
-			}
+			$wpdb->insert( $table, $data );
 
 			return $this;
 		}
@@ -82,12 +81,11 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		/**
 		 * Update queue
 		 *
-		 * @param string $key
-		 * @param array  $data
+		 * @param object $data
 		 *
 		 * @return $this
 		 */
-		public function update( $key, $data ) {
+		public function update( $data ) {
 			if ( ! empty( $data ) ) {
 				update_site_option( $key, $data );
 			}
@@ -98,31 +96,21 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		/**
 		 * Delete queue
 		 *
-		 * @param string $key
+		 * @param object $job
 		 *
 		 * @return $this
 		 */
-		public function delete( $key ) {
-			delete_site_option( $key );
+		public function delete( $job ) {
+			global $wpdb;
+
+			$table = $wpdb->prefix . 'queue';
+			$data  = array(
+				'id' => $job->id,
+			);
+
+			$wpdb->delete( $table, $data );
 
 			return $this;
-		}
-
-		/**
-		 * Generate key
-		 *
-		 * Generates a unique key based on microtime. Queue items are
-		 * given a unique key so that they can be merged upon save.
-		 *
-		 * @param int $length
-		 *
-		 * @return string
-		 */
-		protected function generate_key( $length = 64 ) {
-			$unique  = md5( microtime() . rand() );
-			$prepend = $this->identifier . '_batch_';
-
-			return substr( $prepend . $unique, 0, $length );
 		}
 
 		/**
@@ -157,23 +145,12 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		protected function is_queue_empty() {
 			global $wpdb;
 
-			$table  = $wpdb->options;
-			$column = 'option_name';
+			$sql = "SELECT COUNT(*) FROM {$wpdb->prefix}queue
+					WHERE locked = 0";
 
-			if ( is_multisite() ) {
-				$table  = $wpdb->sitemeta;
-				$column = 'meta_key';
-			}
+			$jobs = $wpdb->get_var( $sql );
 
-			$key = $this->identifier . '_batch_%';
-
-			$count = $wpdb->get_var( $wpdb->prepare( "
-			SELECT COUNT(*)
-			FROM {$table}
-			WHERE {$column} LIKE %s
-		", $key ) );
-
-			return ( $count > 0 ) ? false : true;
+			return ( $jobs > 0 ) ? false : true;
 		}
 
 		/**
@@ -225,36 +202,24 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 *
 		 * @return stdClass Return the first batch from the queue
 		 */
-		protected function get_batch() {
+		protected function get_job() {
 			global $wpdb;
 
-			$table        = $wpdb->options;
-			$column       = 'option_name';
-			$key_column   = 'option_id';
-			$value_column = 'option_value';
+			$sql = "SELECT * FROM {$wpdb->prefix}queue
+					WHERE locked = 0
+					ORDER BY created_at ASC";
 
-			if ( is_multisite() ) {
-				$table        = $wpdb->sitemeta;
-				$column       = 'meta_key';
-				$key_column   = 'meta_id';
-				$value_column = 'meta_value';
+			$job = $wpdb->get_row( $sql );
+
+			if ( ! empty( $job ) ) {
+				$job->data = maybe_unserialize( $job->data );
+			} else {
+				$job = false;
 			}
 
-			$key = $this->identifier . '_batch_%';
+			$this->current_job = $job;
 
-			$query = $wpdb->get_row( $wpdb->prepare( "
-			SELECT *
-			FROM {$table}
-			WHERE {$column} LIKE %s
-			ORDER BY {$key_column} ASC
-			LIMIT 1
-		", $key ) );
-
-			$batch       = new stdClass();
-			$batch->key  = $query->$column;
-			$batch->data = maybe_unserialize( $query->$value_column );
-
-			return $batch;
+			return $job;
 		}
 
 		/**
@@ -267,29 +232,18 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 			$this->lock_process();
 
 			do {
-				$batch = $this->get_batch();
+				$job = $this->get_job();
 
-				foreach ( $batch->data as $key => $value ) {
-					$task = $this->task( $value );
+				$this->lock_job( $job );
 
-					if ( false !== $task ) {
-						$batch->data[ $key ] = $task;
-					} else {
-						unset( $batch->data[ $key ] );
-					}
-
-					if ( $this->time_exceeded() || $this->memory_exceeded() ) {
-						// Batch limits reached
-						break;
-					}
+				try {
+					$this->task( $job->data );
+				} catch ( Exception $e ) {
+					// Release job onto queue
+					break;
 				}
 
-				// Update or delete current batch
-				if ( ! empty( $batch->data ) ) {
-					$this->update( $batch->key, $batch->data );
-				} else {
-					$this->delete( $batch->key );
-				}
+				$this->delete( $job );
 			} while ( ! $this->time_exceeded() && ! $this->memory_exceeded() && ! $this->is_queue_empty() );
 
 			$this->unlock_process();
@@ -302,6 +256,29 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 			}
 
 			wp_die();
+		}
+
+		/**
+		 * Lock job
+		 *
+		 * @param object $job
+		 *
+		 * @return $this
+		 */
+		protected function lock_job( $job )
+		{
+			global $wpdb;
+
+			$table = $wpdb->prefix . 'queue';
+			$data = array(
+				'locked' => 1,
+			);
+
+			$wpdb->update( $table, $data, array(
+				'id' => $job->id,
+			) );
+
+			return $this;
 		}
 
 		/**
