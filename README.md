@@ -152,3 +152,7 @@ function wpbp_http_request_args( $r, $url ) {
 }
 add_filter( 'http_request_args', 'wpbp_http_request_args', 10, 2);
 ```
+
+## License
+
+[GPLv2+](http://www.gnu.org/licenses/gpl-2.0.html)
