@@ -18,26 +18,38 @@ if ( ! class_exists( 'WP_Job' ) ) {
 		/**
 		 * Push a job onto the queue.
 		 *
-		 * @param mixed $job
+		 * @param mixed $data
 		 * @param int   $delay
 		 */
-		public function push( $job, $delay = 0 ) {
-			$this->queue->push( get_class( $this ), $job, $delay );
+		public function push( $data, $delay = 0 ) {
+			$this->queue->push( get_class( $this ), $data, $delay );
 		}
 
 		/**
-		 * Release a job back onto the queue.
+		 * Process.
 		 *
-		 * @param int $delay
-		 *
-		 * @return stdClass
+		 * @param object $job
 		 */
-		protected function release( $delay = 0 ) {
-			$job = new stdClass();
-			$job->release = true;
-			$job->delay = $delay;
+		public function process( $job ) {
+			// Lock job to prevent multiple queue workers
+			// processing the same job.
+			$this->lock_job( $job );
 
-			return $job;
+			try {
+				$this->handle( $job->data );
+				// Delete from queue
+			} catch ( Exception $e ) {
+				// Release onto queue
+			}
+		}
+
+		/**
+		 * Lock job.
+		 *
+		 * @param object $job
+		 */
+		protected function lock_job( $job ) {
+			$this->queue->lock_job( $job->id );
 		}
 
 		/**

@@ -11,7 +11,7 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		/**
 		 * @var string
 		 */
-		protected $table;
+		public $table;
 
 		/**
 		 * Protected constructor to prevent creating a new instance of the
@@ -96,6 +96,71 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 			$timestamp = time() + $offset;
 
 			return gmdate( 'Y-m-d H:i:s', $timestamp );
+		}
+
+		/**
+		 * Available jobs.
+		 */
+		public function available_jobs() {
+			global $wpdb;
+
+			$now = $this->datetime();
+			$sql = $wpdb->prepare( "
+				SELECT COUNT(*) FROM {$this->table}
+				WHERE locked = 0
+				AND available_at <= %s"
+			, $now );
+
+			return $wpdb->get_var( $sql );
+		}
+
+		/**
+		 * Process next job.
+		 */
+		public function process_next_job() {
+			$job = $this->get_next_job();
+
+			try {
+				$callback = new $job->job();
+				$callback->process( $job );
+			} catch ( Exception $e ) {
+				error_log( 'Error!' );
+			}
+		}
+
+		/**
+		 * Get next job.
+		 */
+		protected function get_next_job() {
+			global $wpdb;
+
+			$now = $this->datetime();
+			$sql = $wpdb->prepare( "
+				SELECT * FROM {$this->table}
+				WHERE locked = 0
+				AND available_at <= %s"
+			, $now );
+
+			return $wpdb->get_row( $sql );
+		}
+
+		/**
+		 * Lock job.
+		 *
+		 * @param int $id
+		 */
+		public function lock_job( $id ) {
+			global $wpdb;
+
+			$data  = array(
+				'locked'    => 1,
+				'locked_at' => $this->datetime(),
+			);
+			$where = array(
+				'id' => $id,
+			);
+
+			$wpdb->update( $this->table, $data, $where );
 		}
 	}
 }

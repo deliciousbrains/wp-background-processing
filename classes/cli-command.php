@@ -1,10 +1,5 @@
 <?php
 
-namespace WP_Background_Processing;
-
-use WP_CLI;
-use WP_CLI_Command;
-
 /**
  * Manage queue.
  *
@@ -41,6 +36,21 @@ class CLI_Command extends WP_CLI_Command {
 		dbDelta( $sql );
 
 		WP_CLI::success( "Table {$wpdb->prefix}queue created." );
+	}
+
+	/**
+	 * Listen to the queue.
+	 */
+	public function listen( $args, $assoc_args = array() ) {
+		$worker = new WP_Cli_Worker();
+
+		while ( true ) {
+			if ( $worker->should_run() ) {
+				$worker->process_next_job();
+			} else {
+				sleep( 5 );
+			}
+		}
 	}
 
 }
