@@ -74,8 +74,8 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 			global $wpdb;
 
 			$data = array(
-				'action'       => $class,
-				'job'          => maybe_serialize( $job ),
+				'job'          => $class,
+				'data'         => maybe_serialize( $job ),
 				'available_at' => $this->datetime( $delay ),
 				'created_at'   => $this->datetime(),
 			);
