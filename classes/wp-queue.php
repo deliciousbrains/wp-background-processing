@@ -94,10 +94,11 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		 * @param object $job
 		 * @param int    $delay
 		 */
-		public function release( $job, $delay ) {
+		public function release( $job, $delay = 0 ) {
 			global $wpdb;
 
 			$data = array(
+				'attempts'     => $job->attempts + 1,
 				'locked'       => 0,
 				'locked_at'    => null,
 				'available_at' => $this->datetime( $delay ),

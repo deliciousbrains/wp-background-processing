@@ -46,6 +46,7 @@ if ( ! class_exists( 'WP_Worker' ) ) {
 					$this->queue->delete( $job );
 				}
 			} catch ( Exception $e ) {
+				$this->queue->release( $job );
 				error_log( 'Error!' );
 			}
 		}
