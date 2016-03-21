@@ -33,7 +33,7 @@ if ( ! class_exists( 'WP_Worker' ) ) {
 		 */
 		public function process_next_job() {
 			$job        = $this->queue->get_next_job();
-			$queue_item = unserialize( $job->data );
+			$queue_item = unserialize( $job->job );
 
 			$this->queue->lock_job( $job );
 

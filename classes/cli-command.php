@@ -21,8 +21,7 @@ class CLI_Command extends WP_CLI_Command {
 
 		$sql = "CREATE TABLE {$wpdb->prefix}queue (
 				id bigint(20) NOT NULL AUTO_INCREMENT,
-                job varchar(255) NOT NULL,
-                data longtext NOT NULL,
+                job text NOT NULL,
                 attempts tinyint(1) NOT NULL DEFAULT 0,
                 locked tinyint(1) NOT NULL DEFAULT 0,
                 locked_at datetime DEFAULT NULL,
