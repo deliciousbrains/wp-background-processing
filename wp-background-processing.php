@@ -24,5 +24,19 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	WP_CLI::add_command( 'queue', 'CLI_Command' );
 }
 
+if ( ! function_exists( 'wp_queue' ) ) {
+	/**
+	 * WP queue.
+	 *
+	 * @param WP_Job $job
+	 * @param int    $delay
+	 */
+	function wp_queue( WP_Job $job, $delay = 0 ) {
+		$queue = WP_Queue::get_instance();
+
+		$queue->push( $job, $delay );
+	}
+}
+
 // Instantiate HTTP queue worker
 new WP_Http_Worker();

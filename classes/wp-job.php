@@ -4,99 +4,47 @@ if ( ! class_exists( 'WP_Job' ) ) {
 	abstract class WP_Job {
 
 		/**
-		 * @var WP_Queue
-		 */
-		protected $queue;
-
-		/**
-		 * @var object
-		 */
-		protected $job;
-
-		/**
 		 * @var bool
 		 */
 		protected $released = false;
 
 		/**
-		 * WP_Job constructor.
+		 * @var int
 		 */
-		public function __construct() {
-			$this->queue = WP_Queue::get_instance();
-		}
-
-		/**
-		 * Push a job onto the queue.
-		 *
-		 * @param mixed $data
-		 * @param int   $delay
-		 */
-		public function push( $data, $delay = 0 ) {
-			$this->queue->push( get_class( $this ), $data, $delay );
-		}
+		protected $delay = 0;
 
 		/**
 		 * Release a job back onto the queue
 		 *
-		 * @param mixed $data
-		 * @param int   $delay
+		 * @param int $delay
 		 */
-		public function release( $data = false, $delay = 0 ) {
+		protected function release( $delay = 0 ) {
 			$this->released = true;
-
-			if ( false === $data ) {
-				// Pass original data back to queue
-				$data = $this->job->data;
-			}
-
-			$this->queue->release( $this->job, $data, $delay );
+			$this->delay    = $delay;
 		}
 
 		/**
-		 * Delete
-		 */
-		public function delete() {
-			$this->queue->delete( $this->job );
-		}
-
-		/**
-		 * Process.
+		 * Is released.
 		 *
-		 * @param object $job
+		 * @return bool
 		 */
-		public function process( $job ) {
-			$this->job = $job;
-
-			// Lock job to prevent multiple queue workers
-			// processing the same job.
-			$this->lock_job( $job );
-
-			try {
-				$this->handle( $job->data );
-
-				if ( false === $this->released ) {
-					$this->delete();
-				}
-			} catch ( Exception $e ) {
-				// Release onto queue
-			}
+		public function is_released() {
+			return $this->released;
 		}
 
 		/**
-		 * Lock job.
+		 * Get delay.
 		 *
-		 * @param object $job
+		 * @return int
 		 */
-		protected function lock_job( $job ) {
-			$this->queue->lock_job( $job->id );
+		public function get_delay() {
+			return $this->delay;
 		}
 
 		/**
 		 * Handle the job.
-		 *
-		 * @param mixed $data
 		 */
-		abstract public function handle( $data );
+		abstract public function handle();
 
 	}
 }

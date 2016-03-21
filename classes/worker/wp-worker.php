@@ -32,7 +32,22 @@ if ( ! class_exists( 'WP_Worker' ) ) {
 		 * Process next job.
 		 */
 		public function process_next_job() {
-			$this->queue->process_next_job();
+			$job        = $this->queue->get_next_job();
+			$queue_item = unserialize( $job->data );
+
+			$this->queue->lock_job( $job );
+
+			try {
+				$queue_item->handle();
+
+				if ( $queue_item->is_released() ) {
+					$this->queue->release( $job, $queue_item->get_delay() );
+				} else {
+					$this->queue->delete( $job );
+				}
+			} catch ( Exception $e ) {
+				error_log( 'Error!' );
+			}
 		}
 
 	}

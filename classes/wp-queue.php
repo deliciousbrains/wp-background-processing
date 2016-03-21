@@ -69,17 +69,16 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		/**
 		 * Push a job onto the queue.
 		 *
-		 * @param string $class
-		 * @param mixed  $job
+		 * @param WP_Job $job
 		 * @param int    $delay
 		 *
 		 * @return $this
 		 */
-		public function push( $class, $job, $delay ) {
+		public function push( WP_Job $job, $delay ) {
 			global $wpdb;
 
 			$data = array(
-				'job'          => $class,
+				'job'          => get_class( $job ),
 				'data'         => maybe_serialize( $job ),
 				'available_at' => $this->datetime( $delay ),
 				'created_at'   => $this->datetime(),
@@ -94,14 +93,12 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		 * Release.
 		 *
 		 * @param object $job
-		 * @param mixed  $data
 		 * @param int    $delay
 		 */
-		public function release( $job, $data, $delay ) {
+		public function release( $job, $delay ) {
 			global $wpdb;
 
 			$data = array(
-				'data'         => $data,
 				'locked'       => 0,
 				'locked_at'    => null,
 				'available_at' => $this->datetime( $delay ),
@@ -150,31 +147,16 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 			$now = $this->datetime();
 			$sql = $wpdb->prepare( "
 				SELECT COUNT(*) FROM {$this->table}
-				WHERE locked = 0
-				AND available_at <= %s"
+				WHERE available_at <= %s"
 			, $now );
 
 			return $wpdb->get_var( $sql );
 		}
 
 		/**
-		 * Process next job.
-		 */
-		public function process_next_job() {
-			$job = $this->get_next_job();
-
-			try {
-				$callback = new $job->job();
-				$callback->process( $job );
-			} catch ( Exception $e ) {
-				error_log( 'Error!' );
-			}
-		}
-
-		/**
 		 * Get next job.
 		 */
-		protected function get_next_job() {
+		public function get_next_job() {
 			global $wpdb;
 
 			$this->maybe_release_locked_jobs();
@@ -210,9 +192,9 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		/**
 		 * Lock job.
 		 *
-		 * @param int $id
+		 * @param object $job
 		 */
-		public function lock_job( $id ) {
+		public function lock_job( $job ) {
 			global $wpdb;
 
 			$data  = array(
@@ -220,7 +202,7 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 				'locked_at' => $this->datetime(),
 			);
 			$where = array(
-				'id' => $id,
+				'id' => $job->id,
 			);
 
 			$wpdb->update( $this->table, $data, $where );
