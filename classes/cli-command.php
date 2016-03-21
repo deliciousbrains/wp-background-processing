@@ -45,7 +45,13 @@ class CLI_Command extends WP_CLI_Command {
 
 		while ( true ) {
 			if ( $worker->should_run() ) {
-				$worker->process_next_job();
+				$name = $worker->get_job_name();
+
+				if ( $worker->process_next_job() ) {
+					WP_CLI::success( 'Processed: ' . $name );
+				} else {
+					WP_CLI::warning( 'Failed: ' . $name );
+				}
 			} else {
 				sleep( 5 );
 			}

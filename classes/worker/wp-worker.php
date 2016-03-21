@@ -9,6 +9,11 @@ if ( ! class_exists( 'WP_Worker' ) ) {
 		protected $queue;
 
 		/**
+		 * @var WP_Job
+		 */
+		protected $payload;
+
+		/**
 		 * WP_Worker constructor.
 		 */
 		public function __construct() {
@@ -30,10 +35,13 @@ if ( ! class_exists( 'WP_Worker' ) ) {
 
 		/**
 		 * Process next job.
+		 *
+		 * @return bool
 		 */
 		public function process_next_job() {
-			$job        = $this->queue->get_next_job();
-			$queue_item = unserialize( $job->job );
+			$job     = $this->queue->get_next_job();
+			$queue_item    = unserialize( $job->job );
+			$this->payload = $queue_item;
 
 			$this->queue->lock_job( $job );
 
@@ -47,8 +55,20 @@ if ( ! class_exists( 'WP_Worker' ) ) {
 				}
 			} catch ( Exception $e ) {
 				$this->queue->release( $job );
-				error_log( 'Error!' );
+
+				return false;
 			}
+
+			return true;
+		}
+
+		/**
+		 * Get job name.
+		 *
+		 * @return object
+		 */
+		public function get_job_name() {
+			return get_class( $this->payload );
 		}
 
 	}
