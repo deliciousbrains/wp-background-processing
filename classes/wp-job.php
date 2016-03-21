@@ -9,6 +9,16 @@ if ( ! class_exists( 'WP_Job' ) ) {
 		protected $queue;
 
 		/**
+		 * @var object
+		 */
+		protected $job;
+
+		/**
+		 * @var bool
+		 */
+		protected $released = false;
+
+		/**
 		 * WP_Job constructor.
 		 */
 		public function __construct() {
@@ -26,18 +36,47 @@ if ( ! class_exists( 'WP_Job' ) ) {
 		}
 
 		/**
+		 * Release a job back onto the queue
+		 *
+		 * @param mixed $data
+		 * @param int   $delay
+		 */
+		public function release( $data = false, $delay = 0 ) {
+			$this->released = true;
+
+			if ( false === $data ) {
+				// Pass original data back to queue
+				$data = $this->job->data;
+			}
+
+			$this->queue->release( $this->job, $data, $delay );
+		}
+
+		/**
+		 * Delete
+		 */
+		public function delete() {
+			$this->queue->delete( $this->job );
+		}
+
+		/**
 		 * Process.
 		 *
 		 * @param object $job
 		 */
 		public function process( $job ) {
+			$this->job = $job;
+
 			// Lock job to prevent multiple queue workers
 			// processing the same job.
 			$this->lock_job( $job );
 
 			try {
 				$this->handle( $job->data );
-				// Delete from queue
+
+				if ( false === $this->released ) {
+					$this->delete();
+				}
 			} catch ( Exception $e ) {
 				// Release onto queue
 			}

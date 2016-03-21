@@ -86,6 +86,44 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		}
 
 		/**
+		 * Release.
+		 *
+		 * @param object $job
+		 * @param mixed  $data
+		 * @param int    $delay
+		 */
+		public function release( $job, $data, $delay ) {
+			global $wpdb;
+
+			$data = array(
+				'data'         => $data,
+				'locked'       => 0,
+				'locked_at'    => null,
+				'available_at' => $this->datetime( $delay ),
+			);
+			$where = array(
+				'id' => $job->id,
+			);
+
+			$wpdb->update( $this->table, $data, $where );
+		}
+
+		/**
+		 * Delete.
+		 *
+		 * @param object $job
+		 */
+		public function delete( $job ) {
+			global $wpdb;
+
+			$where = array(
+				'id' => $job->id,
+			);
+
+			$wpdb->delete( $this->table, $where );
+		}
+
+		/**
 		 * Get MySQL datetime.
 		 *
 		 * @param int $offset Seconds, can pass negative int.
