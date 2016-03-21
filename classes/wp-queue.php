@@ -14,6 +14,11 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		public $table;
 
 		/**
+		 * @var int
+		 */
+		public $release_time = 60;
+
+		/**
 		 * Protected constructor to prevent creating a new instance of the
 		 * class via the `new` operator from outside of this class.
 		 */
@@ -172,6 +177,8 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		protected function get_next_job() {
 			global $wpdb;
 
+			$this->maybe_release_locked_jobs();
+
 			$now = $this->datetime();
 			$sql = $wpdb->prepare( "
 				SELECT * FROM {$this->table}
@@ -180,6 +187,24 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 			, $now );
 
 			return $wpdb->get_row( $sql );
+		}
+
+		/**
+		 * Maybe release locked jobs.
+		 */
+		protected function maybe_release_locked_jobs() {
+			global $wpdb;
+
+			$expired = $this->datetime( - $this->release_time );
+
+			$sql = $wpdb->prepare( "
+				UPDATE {$this->table}
+				SET attempts = attempts + 1, locked = 0, locked_at = NULL
+				WHERE locked = 1
+				AND locked_at <= %s"
+			, $expired );
+
+			$wpdb->query( $sql );
 		}
 
 		/**
