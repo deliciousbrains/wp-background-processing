@@ -41,6 +41,8 @@ class CLI_Command extends WP_CLI_Command {
 	 * Listen to the queue.
 	 */
 	public function listen( $args, $assoc_args = array() ) {
+		WP_CLI::log( 'Listening for queue jobs...' );
+
 		$worker = new WP_Cli_Worker();
 
 		while ( true ) {
