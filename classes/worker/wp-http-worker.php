@@ -26,6 +26,7 @@ if ( ! class_exists( 'WP_Http_Worker' ) ) {
 			// Cron health check
 			add_action( 'http_worker_cron', array( $this, 'handle_cron' ) );
 			add_filter( 'cron_schedules', array( $this, 'schedule_cron' ) );
+			$this->maybe_schedule_cron();
 
 			// Dispatch handlers
 			add_action( 'wp_ajax_http_worker', array( $this, 'maybe_handle' ) );
@@ -33,11 +34,6 @@ if ( ! class_exists( 'WP_Http_Worker' ) ) {
 
 			// Dispatch listener
 			add_action( 'wp_queue_job_pushed', array( $this, 'maybe_dispatch_worker' ) );
-
-			// Schedule cron health check
-			if ( ! wp_next_scheduled( 'http_worker_cron' ) ) {
-				wp_schedule_event( time(), 'http_worker_cron_interval', 'http_worker_cron' );
-			}
 		}
 
 		/**
@@ -202,11 +198,28 @@ if ( ! class_exists( 'WP_Http_Worker' ) ) {
 		 * in this request.
 		 */
 		protected function dispatch() {
+			if ( $this->is_http_worker_disabled() ) {
+				return;
+			}
+
 			if ( ! $this->dispatched ) {
 				$this->async_request();
 			}
 
 			$this->dispatched = true;
+		}
+
+		/**
+		 * Is HTTP worker disabled
+		 *
+		 * @return bool
+		 */
+		protected function is_http_worker_disabled() {
+			if ( ! defined( 'DISABLE_WP_HTTP_WORKER' ) || true !== DISABLE_WP_HTTP_WORKER  ) {
+				return false;
+			}
+
+			return true;
 		}
 
 		/**
@@ -277,6 +290,30 @@ if ( ! class_exists( 'WP_Http_Worker' ) ) {
 			);
 
 			return $schedules;
+		}
+
+		/**
+		 * Maybe schedule cron
+		 *
+		 * Schedule health check cron if not disabled. Remove schedule if
+		 * disabled and already scheduled.
+		 */
+		public function maybe_schedule_cron() {
+			if ( $this->is_http_worker_disabled() ) {
+				// Remove health check cron event, if scheduled
+				$timestamp = wp_next_scheduled( 'http_worker_cron' );
+
+				if ( wp_next_scheduled( 'http_worker_cron' ) ) {
+					wp_unschedule_event( $timestamp, 'http_worker_cron' );
+				}
+
+				return;
+			}
+
+			if ( ! wp_next_scheduled( 'http_worker_cron' ) ) {
+				// Schedule health check
+				wp_schedule_event( time(), 'http_worker_cron_interval', 'http_worker_cron' );
+			}
 		}
 
 	}
