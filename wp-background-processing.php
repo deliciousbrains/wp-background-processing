@@ -35,6 +35,8 @@ if ( ! function_exists( 'wp_queue' ) ) {
 		$queue = WP_Queue::get_instance();
 
 		$queue->push( $job, $delay );
+		
+		do_action( 'wp_queue_job_pushed', $job );
 	}
 }
 
