@@ -8,11 +8,13 @@
 class Queue_Command extends WP_CLI_Command {
 
 	/**
-	 * Creates the queue table.
+	 * Creates the queue tables.
 	 *
-	 * @subcommand create-table
+	 * @subcommand create-tables
 	 */
-	public function create_table( $args, $assoc_args = array() ) {
+	public function create_tables( $args, $assoc_args = array() ) {
+		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+
 		global $wpdb;
 
 		$wpdb->hide_errors();
@@ -30,7 +32,14 @@ class Queue_Command extends WP_CLI_Command {
                 PRIMARY KEY  (id)
 				) $charset_collate;";
 
-		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+		dbDelta( $sql );
+
+		$sql = "CREATE TABLE {$wpdb->prefix}failed_jobs (
+				id bigint(20) NOT NULL AUTO_INCREMENT,
+                job text NOT NULL,
+                failed_at datetime NOT NULL,
+                PRIMARY KEY  (id)
+				) $charset_collate;";
 
 		dbDelta( $sql );
 

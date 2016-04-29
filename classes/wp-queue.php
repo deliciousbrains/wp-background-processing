@@ -9,6 +9,11 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		public $table;
 
 		/**
+		 * @var string
+		 */
+		public $failed_table;
+
+		/**
 		 * @var int
 		 */
 		public $release_time = 60;
@@ -19,7 +24,8 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		public function __construct() {
 			global $wpdb;
 
-			$this->table = $wpdb->prefix . 'queue';
+			$this->table        = $wpdb->prefix . 'queue';
+			$this->failed_table = $wpdb->prefix . 'failed_jobs';
 		}
 
 		/**
@@ -51,6 +57,12 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		 * @param int    $delay
 		 */
 		public function release( $job, $delay = 0 ) {
+			if ( $job->attempts >= 3 ) {
+				$this->failed( $job );
+
+				return;
+			}
+
 			global $wpdb;
 
 			$data = array(
@@ -64,6 +76,22 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 			);
 
 			$wpdb->update( $this->table, $data, $where );
+		}
+
+		/**
+		 * Failed
+		 *
+		 * @param stdClass $job
+		 */
+		protected function failed( $job ) {
+			global $wpdb;
+
+			$wpdb->insert( $this->failed_table, array(
+				'job'       => maybe_serialize( $job->job ),
+				'failed_at' => $this->datetime(),
+			) );
+
+			$this->delete( $job );
 		}
 
 		/**
