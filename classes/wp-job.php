@@ -4,6 +4,11 @@ if ( ! class_exists( 'WP_Job' ) ) {
 	abstract class WP_Job {
 
 		/**
+		 * @var stdClass
+		 */
+		private $job;
+		
+		/**
 		 * @var int
 		 */
 		private $delay = 0;
@@ -19,6 +24,15 @@ if ( ! class_exists( 'WP_Job' ) ) {
 		private $released = false;
 
 		/**
+		 * Set job
+		 *
+		 * @param $job
+		 */
+		public function set_job( $job ) {
+			$this->job = $job;
+		}
+		
+		/**
 		 * Delete the job from the queue
 		 */
 		protected function delete() {
@@ -33,6 +47,15 @@ if ( ! class_exists( 'WP_Job' ) ) {
 		protected function release( $delay = 0 ) {
 			$this->released = true;
 			$this->delay    = $delay;
+		}
+
+		/**
+		 * Attempts
+		 * 
+		 * @return int
+		 */
+		protected function attempts() {
+			return (int) $this->job->attempts;
 		}
 
 		/**

@@ -45,6 +45,7 @@ if ( ! class_exists( 'WP_Worker' ) ) {
 			$this->payload = unserialize( $job->job );
 
 			$this->queue->lock_job( $job );
+			$this->payload->set_job( $job );
 
 			try {
 				$this->payload->handle();
