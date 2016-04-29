@@ -41,9 +41,11 @@ class Queue_Command extends WP_CLI_Command {
 	 * Listen to the queue.
 	 */
 	public function listen( $args, $assoc_args = array() ) {
-		WP_CLI::log( 'Listening for queue jobs...' );
+		global $wp_queue;
 
-		$worker = new WP_Worker();
+		$worker = new WP_Worker( $wp_queue );
+
+		WP_CLI::log( 'Listening for queue jobs...' );
 
 		while ( true ) {
 			if ( $worker->should_run() ) {
@@ -62,7 +64,9 @@ class Queue_Command extends WP_CLI_Command {
 	 * Process the next job in the queue.
 	 */
 	public function work( $args, $assoc_args = array() ) {
-		$worker = new WP_Worker();
+		global $wp_queue;
+
+		$worker = new WP_Worker( $wp_queue );
 
 		if ( $worker->should_run() ) {
 			if ( $worker->process_next_job() ) {

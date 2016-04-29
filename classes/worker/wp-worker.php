@@ -15,9 +15,11 @@ if ( ! class_exists( 'WP_Worker' ) ) {
 
 		/**
 		 * WP_Worker constructor.
+		 *
+		 * @param WP_Queue $queue
 		 */
-		public function __construct() {
-			$this->queue = WP_Queue::get_instance();
+		public function __construct( $queue ) {
+			$this->queue = $queue;
 		}
 
 		/**

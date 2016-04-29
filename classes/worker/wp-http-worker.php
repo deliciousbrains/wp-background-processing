@@ -19,9 +19,11 @@ if ( ! class_exists( 'WP_Http_Worker' ) ) {
 
 		/**
 		 * WP_Http_Worker constructor
+		 *
+		 * @param WP_Queue $queue
 		 */
-		public function __construct() {
-			parent::__construct();
+		public function __construct( $queue ) {
+			parent::__construct( $queue );
 
 			// Cron health check
 			add_action( 'http_worker_cron', array( $this, 'handle_cron' ) );

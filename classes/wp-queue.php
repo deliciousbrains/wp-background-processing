@@ -4,11 +4,6 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 	class WP_Queue {
 
 		/**
-		 * @var WP_Queue
-		 */
-		protected static $instance;
-
-		/**
 		 * @var string
 		 */
 		public $table;
@@ -19,48 +14,9 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		public $release_time = 60;
 
 		/**
-		 * Protected constructor to prevent creating a new instance of the
-		 * class via the `new` operator from outside of this class.
+		 * WP_Queue constructor
 		 */
-		protected function __construct() {
-			// Singleton
-		}
-
-		/**
-		 * As this class is a singleton it should not be clone-able.
-		 */
-		protected function __clone() {
-			// Singleton
-		}
-
-		/**
-		 * As this class is a singleton it should not be able to be unserialized.
-		 */
-		protected function __wakeup() {
-			// Singleton
-		}
-
-		/**
-		 * Make this class a singleton.
-		 *
-		 * Use this instead of __construct()
-		 *
-		 * @return WP_Queue
-		 */
-		public static function get_instance() {
-			if ( ! isset( static::$instance ) && ! ( self::$instance instanceof WP_Queue ) ) {
-				static::$instance = new WP_Queue();
-
-				static::$instance->init();
-			}
-
-			return static::$instance;
-		}
-
-		/**
-		 * Init WP_Queue.
-		 */
-		protected function init() {
+		public function __construct() {
 			global $wpdb;
 
 			$this->table = $wpdb->prefix . 'queue';

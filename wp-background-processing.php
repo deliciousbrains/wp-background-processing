@@ -20,6 +20,12 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	WP_CLI::add_command( 'queue', 'Queue_Command' );
 }
 
+global $wp_queue;
+$wp_queue = new WP_Queue();
+
+// Instantiate HTTP queue worker
+new WP_Http_Worker( $wp_queue );
+
 if ( ! function_exists( 'wp_queue' ) ) {
 	/**
 	 * WP queue.
@@ -28,13 +34,10 @@ if ( ! function_exists( 'wp_queue' ) ) {
 	 * @param int    $delay
 	 */
 	function wp_queue( WP_Job $job, $delay = 0 ) {
-		$queue = WP_Queue::get_instance();
+		global $wp_queue;
 
-		$queue->push( $job, $delay );
-		
+		$wp_queue->push( $job, $delay );
+
 		do_action( 'wp_queue_job_pushed', $job );
 	}
 }
-
-// Instantiate HTTP queue worker
-new WP_Http_Worker();
