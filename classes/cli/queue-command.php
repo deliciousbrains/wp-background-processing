@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Manage queue.
+ * Manage queue and jobs.
  *
  * @package wp-cli
  */
-class CLI_Command extends WP_CLI_Command {
+class Queue_Command extends WP_CLI_Command {
 
 	/**
 	 * Creates the queue table.
@@ -43,7 +43,7 @@ class CLI_Command extends WP_CLI_Command {
 	public function listen( $args, $assoc_args = array() ) {
 		WP_CLI::log( 'Listening for queue jobs...' );
 
-		$worker = new WP_Cli_Worker();
+		$worker = new WP_Worker();
 
 		while ( true ) {
 			if ( $worker->should_run() ) {

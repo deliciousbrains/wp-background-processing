@@ -11,14 +11,13 @@ Author URI: https://deliciousbrains.com/
 require_once plugin_dir_path( __FILE__ ) . 'classes/wp-job.php';
 require_once plugin_dir_path( __FILE__ ) . 'classes/wp-queue.php';
 require_once plugin_dir_path( __FILE__ ) . 'classes/worker/wp-worker.php';
-require_once plugin_dir_path( __FILE__ ) . 'classes/worker/wp-cli-worker.php';
 require_once plugin_dir_path( __FILE__ ) . 'classes/worker/wp-http-worker.php';
 
 // Add WP CLI commands
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
-	require_once plugin_dir_path( __FILE__ ) . 'classes/cli-command.php';
+	require_once plugin_dir_path( __FILE__ ) . 'classes/cli/queue-command.php';
 
-	WP_CLI::add_command( 'queue', 'CLI_Command' );
+	WP_CLI::add_command( 'queue', 'Queue_Command' );
 }
 
 if ( ! function_exists( 'wp_queue' ) ) {

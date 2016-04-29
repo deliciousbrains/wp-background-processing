@@ -1,7 +1,7 @@
 <?php
 
 if ( ! class_exists( 'WP_Worker' ) ) {
-	abstract class WP_Worker {
+	class WP_Worker {
 
 		/**
 		 * @var WP_Queue
