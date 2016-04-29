@@ -4,14 +4,26 @@ if ( ! class_exists( 'WP_Job' ) ) {
 	abstract class WP_Job {
 
 		/**
-		 * @var bool
-		 */
-		protected $released = false;
-
-		/**
 		 * @var int
 		 */
-		protected $delay = 0;
+		private $delay = 0;
+
+		/**
+		 * @var bool
+		 */
+		private $deleted = false;
+
+		/**
+		 * @var bool
+		 */
+		private $released = false;
+
+		/**
+		 * Delete the job from the queue
+		 */
+		protected function delete() {
+			$this->deleted = true;
+		}
 
 		/**
 		 * Release a job back onto the queue
@@ -24,12 +36,30 @@ if ( ! class_exists( 'WP_Job' ) ) {
 		}
 
 		/**
+		 * Is deleted.
+		 *
+		 * @return bool
+		 */
+		public function is_deleted() {
+			return $this->deleted;
+		}
+
+		/**
 		 * Is released.
 		 *
 		 * @return bool
 		 */
 		public function is_released() {
 			return $this->released;
+		}
+
+		/**
+		 * Is deleted for released
+		 * 
+		 * @return bool
+		 */
+		public function is_deleted_or_released() {
+			return $this->is_deleted() || $this->is_released();
 		}
 
 		/**

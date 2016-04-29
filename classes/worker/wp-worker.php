@@ -41,18 +41,26 @@ if ( ! class_exists( 'WP_Worker' ) ) {
 		 * @return bool
 		 */
 		public function process_next_job() {
-			$job     = $this->queue->get_next_job();
-			$queue_item    = unserialize( $job->job );
-			$this->payload = $queue_item;
+			$job           = $this->queue->get_next_job();
+			$this->payload = unserialize( $job->job );
 
 			$this->queue->lock_job( $job );
 
 			try {
-				$queue_item->handle();
+				$this->payload->handle();
 
-				if ( $queue_item->is_released() ) {
-					$this->queue->release( $job, $queue_item->get_delay() );
-				} else {
+				if ( $this->payload->is_released() ) {
+					// Job manually released, release back onto queue
+					$this->queue->release( $job, $this->payload->get_delay() );
+				}
+
+				if ( $this->payload->is_deleted() ) {
+					// Job manually deleted, delete from queue
+					$this->queue->delete( $job );
+				}
+
+				if ( ! $this->payload->is_deleted_or_released() ) {
+					// Job completed, delete from queue
 					$this->queue->delete( $job );
 				}
 			} catch ( Exception $e ) {
