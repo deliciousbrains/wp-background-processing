@@ -47,16 +47,31 @@ class Queue_Command extends WP_CLI_Command {
 
 		while ( true ) {
 			if ( $worker->should_run() ) {
-				$name = $worker->get_job_name();
-
 				if ( $worker->process_next_job() ) {
-					WP_CLI::success( 'Processed: ' . $name );
+					WP_CLI::success( 'Processed: ' . $worker->get_job_name() );
 				} else {
-					WP_CLI::warning( 'Failed: ' . $name );
+					WP_CLI::warning( 'Failed: ' . $worker->get_job_name() );
 				}
 			} else {
 				sleep( 5 );
 			}
+		}
+	}
+
+	/**
+	 * Process the next job in the queue.
+	 */
+	public function work( $args, $assoc_args = array() ) {
+		$worker = new WP_Worker();
+
+		if ( $worker->should_run() ) {
+			if ( $worker->process_next_job() ) {
+				WP_CLI::success( 'Processed: ' . $worker->get_job_name() );
+			} else {
+				WP_CLI::warning( 'Failed: ' . $worker->get_job_name() );
+			}
+		} else {
+			WP_CLI::log( 'No jobs to process...' );
 		}
 	}
 
