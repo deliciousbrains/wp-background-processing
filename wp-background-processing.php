@@ -8,9 +8,6 @@ Version: 1.0
 Author URI: https://deliciousbrains.com/
 */
 
-require_once plugin_dir_path( __FILE__ ) . 'classes/wp-async-request.php';
-require_once plugin_dir_path( __FILE__ ) . 'classes/wp-background-process.php';
-
 require_once plugin_dir_path( __FILE__ ) . 'classes/wp-job.php';
 require_once plugin_dir_path( __FILE__ ) . 'classes/wp-queue.php';
 require_once plugin_dir_path( __FILE__ ) . 'classes/worker/wp-worker.php';
