@@ -138,6 +138,15 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		}
 
 		/**
+		 * Available jobs.
+		 */
+		public function failed_jobs() {
+			global $wpdb;
+
+			return $wpdb->get_var( "SELECT COUNT(*) FROM {$this->failed_table}" );
+		}
+
+		/**
 		 * Get next job.
 		 */
 		public function get_next_job() {

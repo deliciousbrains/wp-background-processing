@@ -88,4 +88,14 @@ class Queue_Command extends WP_CLI_Command {
 		}
 	}
 
+	/**
+	 * Show queue status.
+	 */
+	public function status( $args, $assoc_args = array() ) {
+		global $wp_queue;
+
+		WP_CLI::log( $wp_queue->available_jobs() . ' jobs in the queue' );
+		WP_CLI::log( $wp_queue->failed_jobs() . ' failed jobs' );
+	}
+
 }
