@@ -36,7 +36,7 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		 *
 		 * @return $this
 		 */
-		public function push( WP_Job $job, $delay ) {
+		public function push( WP_Job $job, $delay = 0 ) {
 			global $wpdb;
 
 			$data = array(
@@ -87,7 +87,7 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 			global $wpdb;
 
 			$wpdb->insert( $this->failed_table, array(
-				'job'       => maybe_serialize( $job->job ),
+				'job'       => $job->job,
 				'failed_at' => $this->datetime(),
 			) );
 
@@ -144,6 +144,27 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 			global $wpdb;
 
 			return $wpdb->get_var( "SELECT COUNT(*) FROM {$this->failed_table}" );
+		}
+
+		/**
+		 * Restart failed jobs.
+		 */
+		public function restart_failed_jobs() {
+			global $wpdb;
+
+			$count = 0;
+			$jobs  = $wpdb->get_results( "SELECT * FROM {$this->failed_table}" );
+
+			foreach ( $jobs as $job ) {
+				$this->push( maybe_unserialize( $job->job ) );
+				$wpdb->delete( $this->failed_table, array(
+					'id' => $job->id,
+				) );
+
+				$count++;
+			}
+
+			return $count;
 		}
 
 		/**

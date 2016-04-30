@@ -98,4 +98,23 @@ class Queue_Command extends WP_CLI_Command {
 		WP_CLI::log( $wp_queue->failed_jobs() . ' failed jobs' );
 	}
 
+	/**
+	 * Push failed jobs back onto the queue.
+	 *
+	 * @subcommand restart-failed
+	 */
+	public function restart_failed( $args, $assoc_args = array() ) {
+		global $wp_queue;
+
+		if ( ! $wp_queue->failed_jobs() ) {
+			WP_CLI::log( 'No failed jobs to restart...' );
+
+			return;
+		}
+
+		$count = $wp_queue->restart_failed_jobs();
+
+		WP_CLI::success( $count . ' failed jobs pushed to the queue' );
+	}
+
 }
