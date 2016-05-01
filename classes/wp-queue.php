@@ -91,6 +91,12 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 				'failed_at' => $this->datetime(),
 			) );
 
+			$payload = unserialize($job->job);
+
+			if (method_exists($payload, 'failed')) {
+				$payload->failed();
+			}
+
 			$this->delete( $job );
 		}
 
