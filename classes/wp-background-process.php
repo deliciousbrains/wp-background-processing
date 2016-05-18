@@ -441,6 +441,24 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 			}
 		}
 
+    /**
+     * Cancel Process
+     *
+     * Stop processing rest queue items, clear cronjob and delete batch.
+     *
+     */
+    public function cancel_process() {
+
+      if ( $this->is_queue_empty() ) {
+
+        $batch = $this->get_batch();
+        $batch = $this->delete( $batch->key );
+
+        wp_clear_scheduled_hook( $this->cron_hook_identifier );
+      }
+
+    }
+
 		/**
 		 * Task
 		 *
