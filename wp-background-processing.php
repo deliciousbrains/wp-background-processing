@@ -1,4 +1,10 @@
 <?php
+/**
+ * WP-Background Processing
+ *
+ * @package WP-Background-Processing
+ */
+
 /*
 Plugin Name: WP Background Processing
 Plugin URI: https://github.com/A5hleyRich/wp-background-processing
