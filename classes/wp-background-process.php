@@ -449,7 +449,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
          */
         public function cancel_process() {
 
-          if ( $this->is_queue_empty() ) {
+          if ( ! $this->is_queue_empty() ) {
 
             $batch = $this->get_batch();
             $batch = $this->delete( $batch->key );
