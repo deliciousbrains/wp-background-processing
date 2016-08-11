@@ -12,7 +12,7 @@ Async requests are useful for pushing slow one-off tasks such as sending emails 
 
 Extend the `WP_Async_Request` class:
 
-```
+```php
 class WP_Example_Request extends WP_Async_Request {
 
 	/**
@@ -69,7 +69,7 @@ Queues work on a first in first out basis, which allows additional items to be p
 
 Extend the `WP_Background_Process` class:
 
-```
+```php
 class WP_Example_Process extends WP_Background_Process {
 
 	/**
@@ -130,7 +130,7 @@ Instantiate your process:
 
 Push items to the queue:
 
-```
+```php
 foreach ( $items as $item ) {
     $this->example_process->push_to_queue( $item );
 }
@@ -144,7 +144,7 @@ Save and dispatch the queue:
 
 If your site is behind BasicAuth, both async requests and background processes will fail to complete. This is because WP Background Processing relies on the [WordPress HTTP API](http://codex.wordpress.org/HTTP_API), which requires you to attach your BasicAuth credentials to requests. The easiest way to do this is using the following filter:
 
-```
+```php
 function wpbp_http_request_args( $r, $url ) {
 	$r['headers']['Authorization'] = 'Basic ' . base64_encode( USERNAME . ':' . PASSWORD );
 
