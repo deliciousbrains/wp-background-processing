@@ -1,5 +1,5 @@
 {
-  "name": "minnpost/wp-background-processing",
+  "name": "a5hleyrich/wp-background-processing",
   "description": "WP Background Processing can be used to fire off non-blocking asynchronous requests or as a background processing tool, allowing you to queue tasks.",
   "type": "library",
   "require": {
@@ -8,8 +8,8 @@
   "license": "GPLv2+",
   "authors": [
     {
-      "name": "MinnPost",
-      "email": "tech@minnpost.com"
+      "name": "Ashley Rich",
+      "email": "hello@ashleyrich.com"
     }
   ],
   "autoload": {
