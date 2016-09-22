@@ -304,6 +304,8 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 
 					if ( false !== $task ) {
 						$batch->data[ $key ] = $task;
+						// Restart batch.
+						break;
 					} else {
 						unset( $batch->data[ $key ] );
 					}
