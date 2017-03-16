@@ -497,10 +497,11 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 * item from the queue.
 		 *
 		 * @param mixed $item Queue item to iterate over.
+		 * @param string|null $task_name Run multiple task with task name.
 		 *
 		 * @return mixed
 		 */
-		abstract protected function task( $item );
+		abstract protected function task( $item, $task_name=null );
 
 	}
 }
