@@ -19,6 +19,11 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		protected $release_time = 60;
 
 		/**
+		 * @var int
+		 */
+		protected $max_attempts = 3;
+
+		/**
 		 * WP_Queue constructor
 		 *
 		 * @param wpdb $database
@@ -55,8 +60,14 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		 * @return false|int
 		 */
 		public function release( $job, $delay = 0 ) {
+			$attempts = $job->attempts + 1;
+
+			if ( $attempts >= $this->max_attempts ) {
+				return $this->delete( $job );
+			}
+
 			$data = array(
-				'attempts'     => $job->attempts + 1,
+				'attempts'     => $attempts,
 				'locked'       => 0,
 				'locked_at'    => null,
 				'available_at' => $this->datetime( $delay ),
