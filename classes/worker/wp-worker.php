@@ -11,7 +11,7 @@ if ( ! class_exists( 'WP_Worker' ) ) {
 		/**
 		 * @var WP_Job
 		 */
-		protected $payload;
+		protected $job;
 
 		/**
 		 * WP_Worker constructor.
@@ -41,33 +41,23 @@ if ( ! class_exists( 'WP_Worker' ) ) {
 		 * @return bool
 		 */
 		public function process_next_job() {
-			$job           = $this->queue->get_next_job();
-			$this->payload = unserialize( $job->job );
+			$raw_job   = $this->queue->next_job();
+			$this->job = unserialize( $raw_job->job );
 
-			$this->queue->lock_job( $job );
-			$this->payload->set_job( $job );
+			$this->queue->lock_job( $raw_job );
 
 			try {
-				$this->payload->handle();
-
-				if ( $this->payload->is_released() ) {
-					// Job manually released, release back onto queue
-					$this->queue->release( $job, $this->payload->get_delay() );
-				}
-
-				if ( $this->payload->is_deleted() ) {
-					// Job manually deleted, delete from queue
-					$this->queue->delete( $job );
-				}
-
-				if ( ! $this->payload->is_deleted_or_released() ) {
-					// Job completed, delete from queue
-					$this->queue->delete( $job );
-				}
+				$this->job->handle();
 			} catch ( Exception $e ) {
-				$this->queue->release( $job );
+				$this->queue->release( $raw_job );
 
 				return false;
+			}
+
+			if ( $this->job->is_released() ) {
+				$this->queue->release( $raw_job, $this->job->release_delay() );
+			} else {
+				$this->queue->delete( $raw_job );
 			}
 
 			return true;
@@ -76,10 +66,10 @@ if ( ! class_exists( 'WP_Worker' ) ) {
 		/**
 		 * Get job name.
 		 *
-		 * @return object
+		 * @return string
 		 */
 		public function get_job_name() {
-			return get_class( $this->payload );
+			return get_class( $this->job );
 		}
 
 	}

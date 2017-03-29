@@ -4,94 +4,54 @@ if ( ! class_exists( 'WP_Job' ) ) {
 	abstract class WP_Job {
 
 		/**
-		 * @var stdClass
-		 */
-		private $job;
-		
-		/**
-		 * @var int
-		 */
-		private $delay = 0;
-
-		/**
-		 * @var bool
-		 */
-		private $deleted = false;
-
-		/**
-		 * @var bool
+		 * @var bool|int
 		 */
 		private $released = false;
 
 		/**
-		 * Set job
-		 *
-		 * @param $job
+		 * @var int
 		 */
-		public function set_job( $job ) {
-			$this->job = $job;
-		}
-		
-		/**
-		 * Delete the job from the queue
-		 */
-		protected function delete() {
-			$this->deleted = true;
-		}
+		private $release_delay = 0;
 
 		/**
-		 * Release a job back onto the queue
+		 * Release a job back onto the queue.
 		 *
 		 * @param int $delay
 		 */
 		protected function release( $delay = 0 ) {
-			$this->released = true;
-			$this->delay    = $delay;
+			$this->released      = true;
+			$this->release_delay = $delay;
 		}
 
 		/**
-		 * Attempts
-		 * 
-		 * @return int
-		 */
-		protected function attempts() {
-			return (int) $this->job->attempts;
-		}
-
-		/**
-		 * Is deleted.
+		 * Is the job released?
 		 *
-		 * @return bool
-		 */
-		public function is_deleted() {
-			return $this->deleted;
-		}
-
-		/**
-		 * Is released.
-		 *
-		 * @return bool
+		 * @return bool|int
 		 */
 		public function is_released() {
 			return $this->released;
 		}
 
 		/**
-		 * Is deleted for released
-		 * 
-		 * @return bool
-		 */
-		public function is_deleted_or_released() {
-			return $this->is_deleted() || $this->is_released();
-		}
-
-		/**
-		 * Get delay.
+		 * Get release delay.
 		 *
 		 * @return int
 		 */
-		public function get_delay() {
-			return $this->delay;
+		public function release_delay() {
+			return $this->release_delay;
+		}
+
+		/**
+		 * Determine which properties should be serialized.
+		 *
+		 * @return array
+		 */
+		public function __sleep() {
+			$properties = get_object_vars( $this );
+
+			unset( $properties['released'], $properties['release_delay'] );
+
+			return array_keys( $properties );
 		}
 
 		/**

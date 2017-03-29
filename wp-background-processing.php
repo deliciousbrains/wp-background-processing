@@ -20,8 +20,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	WP_CLI::add_command( 'queue', 'Queue_Command' );
 }
 
-global $wp_queue;
-$wp_queue = new WP_Queue();
+global $wp_queue, $wpdb;
+$wp_queue = new WP_Queue( $wpdb );
 
 // Instantiate HTTP queue worker
 new WP_Http_Worker( $wp_queue );

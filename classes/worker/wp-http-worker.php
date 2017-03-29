@@ -283,7 +283,7 @@ if ( ! class_exists( 'WP_Http_Worker' ) ) {
 		 * @return mixed
 		 */
 		public function schedule_cron( $schedules ) {
-			$interval = apply_filters( 'http_worker_cron_interval', 3 );
+			$interval = apply_filters( 'http_worker_cron_interval', 1 );
 
 			// Adds every 3 minutes to the existing schedules.
 			$schedules[ 'http_worker_cron_interval' ] = array(
