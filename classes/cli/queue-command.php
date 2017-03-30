@@ -8,7 +8,7 @@
 class Queue_Command extends WP_CLI_Command {
 
 	/**
-	 * Creates the queue tables.
+	 * Creates the queue database tables.
 	 *
 	 * @subcommand create-tables
 	 */
@@ -44,6 +44,7 @@ class Queue_Command extends WP_CLI_Command {
 		dbDelta( $sql );
 
 		WP_CLI::success( "Table {$wpdb->prefix}queue created." );
+		WP_CLI::success( "Table {$wpdb->prefix}failed_jobs created." );
 	}
 
 	/**
