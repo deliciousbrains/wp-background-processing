@@ -42,7 +42,7 @@ if ( ! class_exists( 'WP_Worker' ) ) {
 		 */
 		public function process_next_job() {
 			$raw_job   = $this->queue->next_job();
-			$this->job = unserialize( $raw_job->job );
+			$this->job = $this->queue->build_job( $raw_job );
 
 			try {
 				$this->job->handle();

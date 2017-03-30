@@ -48,6 +48,15 @@ if ( ! interface_exists( 'WP_Queue_Interface' ) ) {
 		 */
 		public function next_job();
 
+		/**
+		 * Build WP_Job from raw job.
+		 *
+		 * @param $raw_job
+		 *
+		 * @return WP_Job
+		 */
+		public function build_job( $raw_job );
+
 	}
 
 }

@@ -171,6 +171,21 @@ if ( ! class_exists( 'WP_Database_Queue' ) ) {
 		}
 
 		/**
+		 * Build WP_Job from raw job.
+		 *
+		 * @param $raw_job
+		 *
+		 * @return WP_Job
+		 */
+		public function build_job( $raw_job ) {
+			$job = unserialize( $raw_job->job );
+
+			$job->set_attempts( $raw_job->attempts );
+
+			return $job;
+		}
+
+		/**
 		 * Lock a job.
 		 *
 		 * @param mixed $raw_job

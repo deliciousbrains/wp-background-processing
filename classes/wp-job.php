@@ -4,6 +4,11 @@ if ( ! class_exists( 'WP_Job' ) ) {
 	abstract class WP_Job {
 
 		/**
+		 * @var int
+		 */
+		private $attempts = 0;
+
+		/**
 		 * @var bool|int
 		 */
 		private $released = false;
@@ -42,6 +47,24 @@ if ( ! class_exists( 'WP_Job' ) ) {
 		}
 
 		/**
+		 * Get job attempts.
+		 *
+		 * @return int
+		 */
+		public function attempts() {
+			return $this->attempts;
+		}
+
+		/**
+		 * Set job attempts.
+		 *
+		 * @param int $attempts
+		 */
+		public function set_attempts( $attempts ) {
+			$this->attempts = $attempts;
+		}
+
+		/**
 		 * Determine which properties should be serialized.
 		 *
 		 * @return array
@@ -49,7 +72,7 @@ if ( ! class_exists( 'WP_Job' ) ) {
 		public function __sleep() {
 			$properties = get_object_vars( $this );
 
-			unset( $properties['released'], $properties['release_delay'] );
+			unset( $properties['attempts'], $properties['released'], $properties['release_delay'] );
 
 			return array_keys( $properties );
 		}
