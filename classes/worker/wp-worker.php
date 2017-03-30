@@ -23,25 +23,17 @@ if ( ! class_exists( 'WP_Worker' ) ) {
 		}
 
 		/**
-		 * Should run
-		 *
-		 * @return bool
-		 */
-		public function should_run() {
-			if ( $this->queue->available_jobs() ) {
-				return true;
-			}
-
-			return false;
-		}
-
-		/**
 		 * Process next job.
 		 *
 		 * @return bool
 		 */
 		public function process_next_job() {
-			$raw_job   = $this->queue->next_job();
+			$raw_job = $this->queue->next_job();
+
+			if ( is_null( $raw_job ) ) {
+				return null;
+			}
+
 			$this->job = $this->queue->build_job( $raw_job );
 
 			try {

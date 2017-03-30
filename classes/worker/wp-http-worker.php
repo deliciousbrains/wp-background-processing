@@ -59,9 +59,7 @@ if ( ! class_exists( 'WP_Http_Worker' ) ) {
 
 			// Loop over jobs while within server limits
 			while ( ! $this->time_exceeded() && ! $this->memory_exceeded() ) {
-				if ( $this->should_run() ) {
-					$this->process_next_job();
-				} else {
+				if ( is_null( $this->process_next_job() ) ) {
 					break;
 				}
 			}

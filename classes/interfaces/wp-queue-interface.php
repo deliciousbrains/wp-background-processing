@@ -44,7 +44,7 @@ if ( ! interface_exists( 'WP_Queue_Interface' ) ) {
 		/**
 		 * Get next available job from the queue.
 		 *
-		 * @return mixed
+		 * @return mixed|null
 		 */
 		public function next_job();
 

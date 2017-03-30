@@ -121,7 +121,7 @@ if ( ! class_exists( 'WP_Database_Queue' ) ) {
 		/**
 		 * Get next available job from the queue.
 		 *
-		 * @return mixed
+		 * @return mixed|null
 		 */
 		public function next_job() {
 			$this->maybe_release_locked_jobs();

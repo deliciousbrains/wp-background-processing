@@ -57,15 +57,21 @@ class Queue_Command extends WP_CLI_Command {
 		WP_CLI::log( 'Listening for queue jobs...' );
 
 		while ( true ) {
-			if ( $worker->should_run() ) {
-				if ( $worker->process_next_job() ) {
-					WP_CLI::success( 'Processed: ' . $worker->get_job_name() );
-				} else {
-					WP_CLI::warning( 'Failed: ' . $worker->get_job_name() );
-				}
-			} else {
-				sleep( 5 );
+			$process = $worker->process_next_job();
+
+			if ( true === $process ) {
+				WP_CLI::success( 'Processed: ' . $worker->get_job_name() );
+
+				continue;
 			}
+
+			if ( false === $process ) {
+				WP_CLI::warning( 'Failed: ' . $worker->get_job_name() );
+
+				continue;
+			}
+
+			sleep( 5 );
 		}
 	}
 
@@ -75,17 +81,22 @@ class Queue_Command extends WP_CLI_Command {
 	public function work( $args, $assoc_args = array() ) {
 		global $wp_queue;
 
-		$worker = new WP_Worker( $wp_queue );
+		$worker  = new WP_Worker( $wp_queue );
+		$process = $worker->process_next_job();
 
-		if ( $worker->should_run() ) {
-			if ( $worker->process_next_job() ) {
-				WP_CLI::success( 'Processed: ' . $worker->get_job_name() );
-			} else {
-				WP_CLI::warning( 'Failed: ' . $worker->get_job_name() );
-			}
-		} else {
-			WP_CLI::log( 'No jobs to process...' );
+		if ( true === $process ) {
+			WP_CLI::success( 'Processed: ' . $worker->get_job_name() );
+
+			return;
 		}
+
+		if ( false === $process ) {
+			WP_CLI::warning( 'Failed: ' . $worker->get_job_name() );
+
+			return;
+		}
+
+		WP_CLI::log( 'No jobs to process...' );
 	}
 
 	/**
