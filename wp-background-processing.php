@@ -9,9 +9,10 @@ Author URI: https://deliciousbrains.com/
 */
 
 require_once plugin_dir_path( __FILE__ ) . 'classes/wp-job.php';
-require_once plugin_dir_path( __FILE__ ) . 'classes/wp-queue.php';
+require_once plugin_dir_path( __FILE__ ) . 'classes/interfaces/wp-queue-interface.php';
 require_once plugin_dir_path( __FILE__ ) . 'classes/worker/wp-worker.php';
 require_once plugin_dir_path( __FILE__ ) . 'classes/worker/wp-http-worker.php';
+require_once plugin_dir_path( __FILE__ ) . 'classes/queues/wp-database-queue.php';
 
 // Add WP CLI commands
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -21,7 +22,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 }
 
 global $wp_queue, $wpdb;
-$wp_queue = new WP_Queue( $wpdb );
+$wp_queue = apply_filters( 'wp_queue_instance', new WP_Database_Queue( $wpdb ) );
 
 // Instantiate HTTP queue worker
 new WP_Http_Worker( $wp_queue );

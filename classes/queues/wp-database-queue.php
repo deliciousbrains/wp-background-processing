@@ -1,7 +1,7 @@
 <?php
 
-if ( ! class_exists( 'WP_Queue' ) ) {
-	class WP_Queue {
+if ( ! class_exists( 'WP_Database_Queue' ) ) {
+	class WP_Database_Queue implements WP_Queue_Interface {
 
 		/**
 		 * @var wpdb
@@ -24,7 +24,7 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		protected $max_attempts = 3;
 
 		/**
-		 * WP_Queue constructor
+		 * WP_Database_Queue constructor.
 		 *
 		 * @param wpdb $database
 		 */
@@ -39,7 +39,7 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		 * @param WP_Job $job
 		 * @param int    $delay
 		 *
-		 * @return false|int
+		 * @return bool
 		 */
 		public function push( WP_Job $job, $delay = 0 ) {
 			$data = array(
@@ -48,22 +48,26 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 				'created_at'   => $this->datetime(),
 			);
 
-			return $this->database->insert( $this->table, $data );
+			if ( $this->database->insert( $this->table, $data ) ) {
+				return true;
+			}
+
+			return false;
 		}
 
 		/**
-		 * Release a job back onto the queue.
+		 * Push a raw job back onto the queue.
 		 *
-		 * @param mixed $job
+		 * @param mixed $raw_job
 		 * @param int   $delay
 		 *
-		 * @return false|int
+		 * @return bool
 		 */
-		public function release( $job, $delay = 0 ) {
-			$attempts = $job->attempts + 1;
+		public function release( $raw_job, $delay = 0 ) {
+			$attempts = $raw_job->attempts + 1;
 
 			if ( $attempts >= $this->max_attempts ) {
-				return $this->delete( $job );
+				return $this->delete( $raw_job );
 			}
 
 			$data = array(
@@ -73,22 +77,65 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 				'available_at' => $this->datetime( $delay ),
 			);
 
-			return $this->database->update( $this->table, $data, array( 'id' => $job->id ) );
+			if ( $this->database->update( $this->table, $data, array( 'id' => $raw_job->id ) ) ) {
+				return true;
+			}
+
+			return false;
 		}
 
 		/**
 		 * Delete a job from the queue.
 		 *
-		 * @param mixed $job
+		 * @param mixed $raw_job
 		 *
-		 * @return false|int
+		 * @return bool
 		 */
-		public function delete( $job ) {
+		public function delete( $raw_job ) {
 			$where = array(
-				'id' => $job->id,
+				'id' => $raw_job->id,
 			);
 
-			return $this->database->delete( $this->table, $where );
+			if ( $this->database->delete( $this->table, $where ) ) {
+				return true;
+			}
+
+			return false;
+		}
+
+		/**
+		 * Count available jobs.
+		 *
+		 * @return int
+		 */
+		public function available_jobs() {
+			$sql = $this->database->prepare( "
+				SELECT COUNT(*) FROM {$this->table}
+				WHERE available_at <= %s", $this->datetime() );
+
+			return (int) $this->database->get_var( $sql );
+		}
+
+		/**
+		 * Get next available job from the queue.
+		 *
+		 * @return mixed
+		 */
+		public function next_job() {
+			$this->maybe_release_locked_jobs();
+
+			$sql = $this->database->prepare( "
+				SELECT * FROM {$this->table}
+				WHERE locked = 0
+				AND available_at <= %s", $this->datetime() );
+
+			$raw_job = $this->database->get_row( $sql );
+
+			if ( ! is_null( $raw_job ) ) {
+				$this->lock_job( $raw_job );
+			}
+
+			return $raw_job;
 		}
 
 		/**
@@ -102,33 +149,6 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 			$timestamp = time() + $offset;
 
 			return gmdate( 'Y-m-d H:i:s', $timestamp );
-		}
-
-		/**
-		 * Count available jobs.
-		 *
-		 * @return null|string
-		 */
-		public function available_jobs() {
-			$sql = $this->database->prepare( "
-				SELECT COUNT(*) FROM {$this->table}
-				WHERE available_at <= %s", $this->datetime() );
-
-			return $this->database->get_var( $sql );
-		}
-
-		/**
-		 * Get next job.
-		 */
-		public function next_job() {
-			$this->maybe_release_locked_jobs();
-
-			$sql = $this->database->prepare( "
-				SELECT * FROM {$this->table}
-				WHERE locked = 0
-				AND available_at <= %s", $this->datetime() );
-
-			return $this->database->get_row( $sql );
 		}
 
 		/**
@@ -151,17 +171,21 @@ if ( ! class_exists( 'WP_Queue' ) ) {
 		/**
 		 * Lock a job.
 		 *
-		 * @param mixed $job
+		 * @param mixed $raw_job
 		 *
 		 * @return false|int
 		 */
-		public function lock_job( $job ) {
+		protected function lock_job( $raw_job ) {
 			$data = array(
 				'locked'    => 1,
 				'locked_at' => $this->datetime(),
 			);
 
-			return $this->database->update( $this->table, $data, array( 'id' => $job->id ) );
+			if ( $this->database->update( $this->table, $data, array( 'id' => $raw_job->id ) ) ) {
+				return true;
+			}
+
+			return false;
 		}
 	}
 }
