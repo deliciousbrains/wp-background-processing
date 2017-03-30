@@ -9,9 +9,9 @@ Author URI: https://deliciousbrains.com/
 */
 
 require_once plugin_dir_path( __FILE__ ) . 'classes/wp-job.php';
-require_once plugin_dir_path( __FILE__ ) . 'classes/interfaces/wp-queue-interface.php';
 require_once plugin_dir_path( __FILE__ ) . 'classes/workers/wp-worker.php';
 require_once plugin_dir_path( __FILE__ ) . 'classes/workers/wp-http-worker.php';
+require_once plugin_dir_path( __FILE__ ) . 'classes/queues/wp-queue-interface.php';
 require_once plugin_dir_path( __FILE__ ) . 'classes/queues/wp-database-queue.php';
 require_once plugin_dir_path( __FILE__ ) . 'functions.php';
 
