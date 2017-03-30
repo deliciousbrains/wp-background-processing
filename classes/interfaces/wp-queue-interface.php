@@ -17,12 +17,13 @@ if ( ! interface_exists( 'WP_Queue_Interface' ) ) {
 		/**
 		 * Push a raw job back onto the queue.
 		 *
-		 * @param mixed $raw_job
-		 * @param int   $delay
+		 * @param mixed  $raw_job
+		 * @param WP_Job $job
+		 * @param int    $delay
 		 *
 		 * @return bool
 		 */
-		public function release( $raw_job, $delay = 0 );
+		public function release( $raw_job, WP_Job $job, $delay = 0 );
 
 		/**
 		 * Delete a job from the queue.

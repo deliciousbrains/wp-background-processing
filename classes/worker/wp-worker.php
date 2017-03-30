@@ -47,13 +47,13 @@ if ( ! class_exists( 'WP_Worker' ) ) {
 			try {
 				$this->job->handle();
 			} catch ( Exception $e ) {
-				$this->queue->release( $raw_job );
+				$this->queue->release( $raw_job, $this->job );
 
 				return false;
 			}
 
 			if ( $this->job->is_released() ) {
-				$this->queue->release( $raw_job, $this->job->release_delay() );
+				$this->queue->release( $raw_job, $this->job, $this->job->release_delay() );
 			} else {
 				$this->queue->delete( $raw_job );
 			}
