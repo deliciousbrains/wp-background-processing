@@ -13,6 +13,7 @@ require_once plugin_dir_path( __FILE__ ) . 'classes/interfaces/wp-queue-interfac
 require_once plugin_dir_path( __FILE__ ) . 'classes/worker/wp-worker.php';
 require_once plugin_dir_path( __FILE__ ) . 'classes/worker/wp-http-worker.php';
 require_once plugin_dir_path( __FILE__ ) . 'classes/queues/wp-database-queue.php';
+require_once plugin_dir_path( __FILE__ ) . 'functions.php';
 
 // Add WP CLI commands
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -26,19 +27,3 @@ $wp_queue = apply_filters( 'wp_queue_instance', new WP_Database_Queue( $wpdb ) )
 
 // Instantiate HTTP queue worker
 new WP_Http_Worker( $wp_queue );
-
-if ( ! function_exists( 'wp_queue' ) ) {
-	/**
-	 * WP queue.
-	 *
-	 * @param WP_Job $job
-	 * @param int    $delay
-	 */
-	function wp_queue( WP_Job $job, $delay = 0 ) {
-		global $wp_queue;
-
-		$wp_queue->push( $job, $delay );
-
-		do_action( 'wp_queue_job_pushed', $job );
-	}
-}
