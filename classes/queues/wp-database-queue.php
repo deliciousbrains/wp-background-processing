@@ -14,6 +14,11 @@ if ( ! class_exists( 'WP_Database_Queue' ) ) {
 		protected $table;
 
 		/**
+		 * @var string
+		 */
+		protected $failed_table;
+
+		/**
 		 * @var int
 		 */
 		protected $release_time = 60;
@@ -29,8 +34,9 @@ if ( ! class_exists( 'WP_Database_Queue' ) ) {
 		 * @param wpdb $database
 		 */
 		public function __construct( wpdb $database ) {
-			$this->database = $database;
-			$this->table    = $database->prefix . 'queue';
+			$this->database     = $database;
+			$this->table        = $database->prefix . 'queue';
+			$this->failed_table = $database->prefix . 'failed_jobs';
 		}
 
 		/**
@@ -68,7 +74,7 @@ if ( ! class_exists( 'WP_Database_Queue' ) ) {
 			$attempts = $raw_job->attempts + 1;
 
 			if ( $attempts >= $this->max_attempts ) {
-				return $this->delete( $raw_job );
+				return $this->fail( $raw_job, $job );
 			}
 
 			$data = array(
@@ -183,6 +189,70 @@ if ( ! class_exists( 'WP_Database_Queue' ) ) {
 			$job->set_attempts( $raw_job->attempts );
 
 			return $job;
+		}
+
+		/**
+		 * Mark a job as failed.
+		 *
+		 * @param mixed  $raw_job
+		 * @param WP_Job $job
+		 *
+		 * @return bool
+		 */
+		public function fail( $raw_job, WP_Job $job ) {
+			if ( method_exists( $job, 'failed' ) ) {
+				$job->failed();
+			}
+
+			$this->delete( $raw_job );
+
+			$data = array(
+				'job'       => maybe_serialize( $job ),
+				'failed_at' => $this->datetime(),
+			);
+
+			if ( $this->database->insert( $this->failed_table, $data ) ) {
+				return true;
+			}
+
+			return false;
+		}
+
+		/**
+		 * Count failed jobs.
+		 *
+		 * @return int
+		 */
+		public function failed_jobs() {
+			return (int) $this->database->get_var( "SELECT COUNT(*) FROM {$this->failed_table}" );
+		}
+
+		/**
+		 * Restart failed jobs.
+		 *
+		 * @return int
+		 */
+		public function restart_failed_jobs() {
+			$count = 0;
+			$jobs  = $this->database->get_results( "SELECT * FROM {$this->failed_table}" );
+
+			if ( ! is_array( $jobs ) ) {
+				return $count;
+			}
+
+			foreach ( $jobs as $job ) {
+				$data = array(
+					'job'        => $job->job,
+					'created_at' => $this->datetime(),
+				);
+
+				$this->database->insert( $this->table, $data );
+				$this->database->delete( $this->failed_table, array( 'id' => $job->id ) );
+
+				$count++;
+			}
+
+			return $count;
 		}
 
 		/**

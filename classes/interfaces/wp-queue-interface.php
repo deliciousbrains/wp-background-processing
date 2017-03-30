@@ -57,6 +57,30 @@ if ( ! interface_exists( 'WP_Queue_Interface' ) ) {
 		 */
 		public function build_job( $raw_job );
 
+		/**
+		 * Mark a job as failed.
+		 *
+		 * @param mixed  $raw_job
+		 * @param WP_Job $job
+		 *
+		 * @return bool
+		 */
+		public function fail( $raw_job, WP_Job $job );
+
+		/**
+		 * Count failed jobs.
+		 *
+		 * @return int
+		 */
+		public function failed_jobs();
+
+		/**
+		 * Restart failed jobs.
+		 *
+		 * @return int
+		 */
+		public function restart_failed_jobs();
+
 	}
 
 }
