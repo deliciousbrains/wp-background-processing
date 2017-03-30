@@ -10,13 +10,14 @@ Author URI: https://deliciousbrains.com/
 
 require_once plugin_dir_path( __FILE__ ) . 'classes/wp-job.php';
 require_once plugin_dir_path( __FILE__ ) . 'classes/interfaces/wp-queue-interface.php';
-require_once plugin_dir_path( __FILE__ ) . 'classes/worker/wp-worker.php';
-require_once plugin_dir_path( __FILE__ ) . 'classes/worker/wp-http-worker.php';
+require_once plugin_dir_path( __FILE__ ) . 'classes/workers/wp-worker.php';
+require_once plugin_dir_path( __FILE__ ) . 'classes/workers/wp-http-worker.php';
 require_once plugin_dir_path( __FILE__ ) . 'classes/queues/wp-database-queue.php';
 require_once plugin_dir_path( __FILE__ ) . 'functions.php';
 
 // Add WP CLI commands
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once plugin_dir_path( __FILE__ ) . 'classes/workers/wp-cli-worker.php';
 	require_once plugin_dir_path( __FILE__ ) . 'classes/cli/queue-command.php';
 
 	WP_CLI::add_command( 'queue', 'Queue_Command' );
