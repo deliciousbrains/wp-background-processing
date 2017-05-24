@@ -58,8 +58,12 @@ if ( ! class_exists( 'WP_Async_Request' ) ) {
 		public function __construct() {
 			$this->identifier = $this->prefix . '_' . $this->action;
 
-			add_action( 'wp_ajax_' . $this->identifier, array( $this, 'maybe_handle' ) );
-			add_action( 'wp_ajax_nopriv_' . $this->identifier, array( $this, 'maybe_handle' ) );
+			add_action( 'rest_api_init', function () {
+				register_rest_route( 'background_process/v1', $this->identifier, array(
+					'methods'	 => 'GET',
+					'callback' => array( $this, 'maybe_handle' ),
+				));
+			});
 		}
 
 		/**
@@ -98,8 +102,7 @@ if ( ! class_exists( 'WP_Async_Request' ) ) {
 			}
 
 			return array(
-				'action' => $this->identifier,
-				'nonce'  => wp_create_nonce( $this->identifier ),
+				'_wpnonce'  => wp_create_nonce( 'wp_rest' ),
 			);
 		}
 
@@ -113,7 +116,7 @@ if ( ! class_exists( 'WP_Async_Request' ) ) {
 				return $this->query_url;
 			}
 
-			return admin_url( 'admin-ajax.php' );
+			return rest_url( $this->identifier );
 		}
 
 		/**
@@ -144,7 +147,7 @@ if ( ! class_exists( 'WP_Async_Request' ) ) {
 			// Don't lock up other requests while processing
 			session_write_close();
 
-			check_ajax_referer( $this->identifier, 'nonce' );
+			//check_ajax_referer( $this->identifier, 'nonce' );
 
 			$this->handle();
 

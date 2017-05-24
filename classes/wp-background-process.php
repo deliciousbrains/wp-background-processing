@@ -172,7 +172,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 				wp_die();
 			}
 
-			check_ajax_referer( $this->identifier, 'nonce' );
+			//check_ajax_referer( $this->identifier, 'nonce' );
 
 			$this->handle();
 
