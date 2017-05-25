@@ -164,19 +164,22 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 
 			if ( $this->is_process_running() ) {
 				// Background process already running.
-				wp_die();
+				return rest_ensure_response( array('success' => true) );
+				//wp_die();
 			}
 
 			if ( $this->is_queue_empty() ) {
 				// No data to process.
-				wp_die();
+				return rest_ensure_response( array('success' => true) );
+				//wp_die();
 			}
 
 			//check_ajax_referer( $this->identifier, 'nonce' );
 
 			$this->handle();
 
-			wp_die();
+			return rest_ensure_response( array('success' => true) );
+			//wp_die();
 		}
 
 		/**
@@ -330,6 +333,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 			} else {
 				$this->complete();
 			}
+			return rest_ensure_response( array('success' => true) );
 
 			wp_die();
 		}

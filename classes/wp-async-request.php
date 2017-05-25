@@ -60,7 +60,7 @@ if ( ! class_exists( 'WP_Async_Request' ) ) {
 
 			add_action( 'rest_api_init', function () {
 				register_rest_route( 'background_process/v1', $this->identifier, array(
-					'methods'	 => 'GET',
+					'methods'	 => 'POST',
 					'callback' => array( $this, 'maybe_handle' ),
 				));
 			});
@@ -116,7 +116,7 @@ if ( ! class_exists( 'WP_Async_Request' ) ) {
 				return $this->query_url;
 			}
 
-			return rest_url( $this->identifier );
+			return rest_url( 'background_process/v1/' . $this->identifier  );
 		}
 
 		/**
@@ -131,7 +131,6 @@ if ( ! class_exists( 'WP_Async_Request' ) ) {
 
 			return array(
 				'timeout'   => 0.01,
-				'blocking'  => false,
 				'body'      => $this->data,
 				'cookies'   => $_COOKIE,
 				'sslverify' => apply_filters( 'https_local_ssl_verify', false ),
@@ -150,8 +149,8 @@ if ( ! class_exists( 'WP_Async_Request' ) ) {
 			//check_ajax_referer( $this->identifier, 'nonce' );
 
 			$this->handle();
-
-			wp_die();
+			return rest_ensure_response( array('success' => true) );
+			//wp_die();
 		}
 
 		/**
