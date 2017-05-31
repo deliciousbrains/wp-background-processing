@@ -58,12 +58,21 @@ if ( ! class_exists( 'WP_Async_Request' ) ) {
 		public function __construct() {
 			$this->identifier = $this->prefix . '_' . $this->action;
 
-			add_action( 'rest_api_init', function () {
-				register_rest_route( 'background_process/v1', $this->identifier, array(
-					'methods'	 => 'POST',
-					'callback' => array( $this, 'maybe_handle' ),
-				));
-			});
+			// Use REST API for requests.
+			if( $this->is_rest() ){
+				add_action( 'rest_api_init', function () {
+					register_rest_route( 'background_process/v1', $this->identifier, array(
+						'methods'	 => 'POST',
+						'callback' => array( $this, 'maybe_handle' ),
+					));
+				});
+			}
+			// Use AJAX API
+			else{
+				add_action( 'wp_ajax_' . $this->identifier, array( $this, 'maybe_handle' ) );
+				add_action( 'wp_ajax_nopriv_' . $this->identifier, array( $this, 'maybe_handle' ) );
+			}
+
 		}
 
 		/**
@@ -101,8 +110,15 @@ if ( ! class_exists( 'WP_Async_Request' ) ) {
 				return $this->query_args;
 			}
 
+			if( $this->is_rest() ){
+				return array(
+					'_wpnonce'  => wp_create_nonce( 'wp_rest' ),
+				);
+			}
+
 			return array(
-				'_wpnonce'  => wp_create_nonce( 'wp_rest' ),
+				'action' => $this->identifier,
+				'nonce'  => wp_create_nonce( $this->identifier ),
 			);
 		}
 
@@ -116,7 +132,11 @@ if ( ! class_exists( 'WP_Async_Request' ) ) {
 				return $this->query_url;
 			}
 
-			return rest_url( 'background_process/v1/' . $this->identifier  );
+			if( $this->is_rest() ){
+				return rest_url( 'background_process/v1/' . $this->identifier  );
+			}
+
+			return admin_url( 'admin-ajax.php' );
 		}
 
 		/**
@@ -129,12 +149,19 @@ if ( ! class_exists( 'WP_Async_Request' ) ) {
 				return $this->post_args;
 			}
 
-			return array(
+			$post_args = array(
 				'timeout'   => 0.01,
+				'blocking'  => false,
 				'body'      => $this->data,
 				'cookies'   => $_COOKIE,
 				'sslverify' => apply_filters( 'https_local_ssl_verify', false ),
 			);
+
+			if( $this->is_rest() ){
+				unset( $post_args['blocking'] );
+			}
+
+			return $post_args;
 		}
 
 		/**
@@ -146,11 +173,54 @@ if ( ! class_exists( 'WP_Async_Request' ) ) {
 			// Don't lock up other requests while processing
 			session_write_close();
 
-			//check_ajax_referer( $this->identifier, 'nonce' );
+			$this->check_nonce();
 
 			$this->handle();
-			return rest_ensure_response( array('success' => true) );
-			//wp_die();
+
+			return $this->send_or_die();
+		}
+
+		/**
+		 * Is REST.
+		 *
+		 * Checks if request is set to use the WordPress REST API instead of AJAX.
+		 *
+		 * @return boolean
+		 */
+		protected function is_rest(){
+			return ( property_exists( $this, 'use_rest' ) && true === $this->use_rest );
+		}
+
+		/**
+		 * Send or die
+		 *
+		 * @return (WP_Error|WP_HTTP_Response|mixed)
+		 */
+		protected function send_or_die(){
+			// If using REST API, return a response.
+			if( $this->is_rest() ){
+				return rest_ensure_response( array('success' => true) );
+			}
+
+			// Because WP AJAX will only work if the page dies.
+			wp_die();
+		}
+
+		/**
+		 * Check Nonce.
+		 *
+		 * Check if nonce is valid, else die.
+		 */
+		protected function check_nonce(){
+			$action = $this->identifier;
+			$query_arg = 'nonce';
+
+			if( $this->is_rest() ){
+				$action = 'wp_rest';
+				$query_arg = '_wpnonce';
+			}
+
+			check_ajax_referer( $action, $query_arg );
 		}
 
 		/**
