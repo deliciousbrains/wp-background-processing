@@ -14,5 +14,16 @@
   ],
   "autoload": {
     "classmap": [ "classes/" ]
-  }
+  },
+  "require-dev": {
+    "stevegrunwell/wp-enforcer": "^0.5.0"
+  },
+  "scripts": {
+		"post-install-cmd": [
+			"wp-enforcer"
+		],
+		"post-update-cmd": [
+			"wp-enforcer"
+		]
+	}
 }
