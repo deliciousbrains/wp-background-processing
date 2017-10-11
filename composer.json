@@ -5,6 +5,9 @@
   "require": {
     "php": ">=5.2"
   },
+  "suggest": {
+    "coenjacobs/mozart": "Easily wrap this library with your own prefix, to prevent collisions when multiple plugins use this library"
+  },
   "license": "GPLv2+",
   "authors": [
     {
