@@ -150,7 +150,7 @@ function wpbp_http_request_args( $r, $url ) {
 
 	return $r;
 }
-add_filter( 'http_request_args', 'wpbp_http_request_args', 10, 2);
+add_filter( 'async_http_request_args', 'wpbp_http_request_args', 10, 2);
 ```
 
 ## License

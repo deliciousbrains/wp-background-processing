@@ -84,6 +84,16 @@ if ( ! class_exists( 'WP_Async_Request' ) ) {
 			$url  = add_query_arg( $this->get_query_args(), $this->get_query_url() );
 			$args = $this->get_post_args();
 
+			/**
+			 * Filters the arguments used in an async request.
+			 *
+			 * @since 1.0.2
+			 *
+			 * @param array  $args An array of HTTP request arguments.
+			 * @param string $url  The request URL.
+			 */
+			$args = apply_filters( 'async_http_request_args', $args, $url );
+
 			return wp_remote_post( esc_url_raw( $url ), $args );
 		}
 
