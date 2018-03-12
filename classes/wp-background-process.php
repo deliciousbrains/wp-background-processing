@@ -164,19 +164,19 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 
 			if ( $this->is_process_running() ) {
 				// Background process already running.
-				return $this->send_or_die();
+				wp_die();
 			}
 
 			if ( $this->is_queue_empty() ) {
 				// No data to process.
-				return $this->send_or_die();
+				wp_die();
 			}
 
-			$this->check_nonce();
+			check_ajax_referer( $this->identifier, 'nonce' );
 
 			$this->handle();
 
-			return $this->send_or_die();
+			wp_die();
 		}
 
 		/**
@@ -197,15 +197,11 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 
 			$key = $wpdb->esc_like( $this->identifier . '_batch_' ) . '%';
 
-			$count = $wpdb->get_var(
-				$wpdb->prepare(
-					"
+			$count = $wpdb->get_var( $wpdb->prepare( "
 			SELECT COUNT(*)
 			FROM {$table}
 			WHERE {$column} LIKE %s
-		", $key
-				)
-			);
+		", $key ) );
 
 			return ( $count > 0 ) ? false : true;
 		}
@@ -276,17 +272,13 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 
 			$key = $wpdb->esc_like( $this->identifier . '_batch_' ) . '%';
 
-			$query = $wpdb->get_row(
-				$wpdb->prepare(
-					"
+			$query = $wpdb->get_row( $wpdb->prepare( "
 			SELECT *
 			FROM {$table}
 			WHERE {$column} LIKE %s
 			ORDER BY {$key_column} ASC
 			LIMIT 1
-		", $key
-				)
-			);
+		", $key ) );
 
 			$batch       = new stdClass();
 			$batch->key  = $query->$column;
@@ -339,7 +331,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 				$this->complete();
 			}
 
-			return $this->send_or_die();
+			wp_die();
 		}
 
 		/**
@@ -424,7 +416,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 			$interval = apply_filters( $this->identifier . '_cron_interval', 5 );
 
 			if ( property_exists( $this, 'cron_interval' ) ) {
-				$interval = apply_filters( $this->identifier . '_cron_interval', $this->cron_interval_identifier );
+				$interval = apply_filters( $this->identifier . '_cron_interval', $this->cron_interval );
 			}
 
 			// Adds every 5 minutes to the existing schedules.
@@ -464,7 +456,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 */
 		protected function schedule_event() {
 			if ( ! wp_next_scheduled( $this->cron_hook_identifier ) ) {
-				wp_schedule_event( time(), $this->cron_interval_identifier, $this->cron_hook_identifier );
+				wp_schedule_event( time() + apply_filters( $this->identifier . '_cron_init_offset', 10 ), $this->cron_interval_identifier, $this->cron_hook_identifier );
 			}
 		}
 
