@@ -172,7 +172,11 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 				wp_die();
 			}
 
-			check_ajax_referer( $this->identifier, 'nonce' );
+			$bypass = apply_filters('wpbp_bypass_verification', false );
+
+			if( ! $bypass ){
+				check_ajax_referer( $this->identifier, 'nonce' );
+			}
 
 			$this->handle();
 
