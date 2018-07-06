@@ -128,6 +128,8 @@ Instantiate your process:
 
 `$this->example_process = new WP_Example_Process();`
 
+**Note:** You must instantiate your process unconditionally. All requests should do this, even if nothing is pushed to the queue.
+
 Push items to the queue:
 
 ```php
