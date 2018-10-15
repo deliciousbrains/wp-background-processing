@@ -367,12 +367,29 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 				$memory_limit = '128M';
 			}
 
-			if ( ! $memory_limit || -1 === intval( $memory_limit ) ) {
+			if ( ! $memory_limit || -1 === (int) $memory_limit ) {
 				// Unlimited, set to 32GB.
-				$memory_limit = '32000M';
+				$memory_limit = '32G';
 			}
 
-			return intval( $memory_limit ) * 1024 * 1024;
+			return $this->shorthand_to_bytes( $memory_limit );
+		}
+
+		/**
+		 * Converts shorthand memory notation such as '128M' or '2G' to bytes.
+		 *
+		 * @see http://php.net/manual/en/faq.using.php#faq.using.shorthandbytes
+		 *
+		 * @param string $value the shorthand value
+		 * @return int
+		 */
+		protected function shorthand_to_bytes( $value ) {
+			switch ( strtolower( substr ( $value, -1 ) ) ) {
+				case 'g': return (int) $value * 1024 * 1024 * 1024;
+				case 'm': return (int) $value * 1024 * 1024;
+				case 'k': return (int) $value * 1024;
+				default:  return (int) $value;
+			}
 		}
 
 		/**
