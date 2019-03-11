@@ -68,7 +68,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 * Dispatch
 		 *
 		 * @access public
-		 * @return void
+		 * @return array|WP_Error
 		 */
 		public function dispatch() {
 			// Schedule the cron healthcheck.
@@ -109,7 +109,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		/**
 		 * Update queue
 		 *
-		 * @param string $key Key.
+		 * @param string $key  Key.
 		 * @param array  $data Data.
 		 *
 		 * @return $this
@@ -159,7 +159,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 * the process is not already running.
 		 */
 		public function maybe_handle() {
-			// Don't lock up other requests while processing
+			// Don't lock up other requests while processing.
 			session_write_close();
 
 			if ( $this->is_process_running() ) {
@@ -197,11 +197,12 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 
 			$key = $wpdb->esc_like( $this->identifier . '_batch_' ) . '%';
 
-			$count = $wpdb->get_var( $wpdb->prepare( "
-			SELECT COUNT(*)
-			FROM {$table}
-			WHERE {$column} LIKE %s
-		", $key ) );
+			$count = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$table} WHERE {$column} LIKE %s ",
+					$key
+				)
+			);
 
 			return ( $count > 0 ) ? false : true;
 		}
@@ -272,13 +273,12 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 
 			$key = $wpdb->esc_like( $this->identifier . '_batch_' ) . '%';
 
-			$query = $wpdb->get_row( $wpdb->prepare( "
-			SELECT *
-			FROM {$table}
-			WHERE {$column} LIKE %s
-			ORDER BY {$key_column} ASC
-			LIMIT 1
-		", $key ) );
+			$query = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM {$table} WHERE {$column} LIKE %s ORDER BY {$key_column} ASC LIMIT 1",
+					$key
+				)
+			);
 
 			$batch       = new stdClass();
 			$batch->key  = $query->$column;
@@ -379,6 +379,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 * Converts a shorthand byte value to an integer byte value.
 		 *
 		 * @param string $value A (PHP ini) byte value, either shorthand or ordinary.
+		 *
 		 * @return int An integer byte value.
 		 */
 		protected function convert_shorthand_to_bytes( $value ) {
@@ -435,7 +436,9 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 * Schedule cron healthcheck
 		 *
 		 * @access public
+		 *
 		 * @param mixed $schedules Schedules.
+		 *
 		 * @return mixed
 		 */
 		public function schedule_cron_healthcheck( $schedules ) {
@@ -448,6 +451,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 			// Adds every 5 minutes to the existing schedules.
 			$schedules[ $this->identifier . '_cron_interval' ] = array(
 				'interval' => MINUTE_IN_SECONDS * $interval,
+				/* translators: %d: cron interval */
 				'display'  => sprintf( __( 'Every %d Minutes' ), $interval ),
 			);
 
@@ -501,7 +505,6 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 * Cancel Process
 		 *
 		 * Stop processing queue items, clear cronjob and delete batch.
-		 *
 		 */
 		public function cancel_process() {
 			if ( ! $this->is_queue_empty() ) {
