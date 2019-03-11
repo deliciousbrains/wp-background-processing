@@ -355,7 +355,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		}
 
 		/**
-		 * Get memory limit
+		 * Get memory limit in bytes.
 		 *
 		 * @return int
 		 */
@@ -367,12 +367,34 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 				$memory_limit = '128M';
 			}
 
-			if ( ! $memory_limit || -1 === intval( $memory_limit ) ) {
+			if ( ! $memory_limit || - 1 === intval( $memory_limit ) ) {
 				// Unlimited, set to 32GB.
 				$memory_limit = '32000M';
 			}
 
-			return intval( $memory_limit ) * 1024 * 1024;
+			return $this->convert_shorthand_to_bytes( $memory_limit );
+		}
+
+		/**
+		 * Converts a shorthand byte value to an integer byte value.
+		 *
+		 * @param string $value A (PHP ini) byte value, either shorthand or ordinary.
+		 * @return int An integer byte value.
+		 */
+		protected function convert_shorthand_to_bytes( $value ) {
+			$value = strtolower( trim( $value ) );
+			$bytes = (int) $value;
+
+			if ( false !== strpos( $value, 'g' ) ) {
+				$bytes *= 1024 * 1024 * 1024;
+			} elseif ( false !== strpos( $value, 'm' ) ) {
+				$bytes *= 1024 * 1024;
+			} elseif ( false !== strpos( $value, 'k' ) ) {
+				$bytes *= 1024;
+			}
+
+			// Deal with large (float) values which run into the maximum integer size.
+			return min( $bytes, PHP_INT_MAX );
 		}
 
 		/**
@@ -389,6 +411,10 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 
 			if ( time() >= $finish ) {
 				$return = true;
+			}
+
+			if ( defined( 'WP_CLI' ) && WP_CLI ) {
+				return false;
 			}
 
 			return apply_filters( $this->identifier . '_time_exceeded', $return );
