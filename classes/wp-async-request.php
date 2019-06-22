@@ -60,31 +60,6 @@ if ( ! class_exists( 'WP_Async_Request' ) ) {
 
 			add_action( 'wp_ajax_' . $this->identifier, array( $this, 'maybe_handle' ) );
 			add_action( 'wp_ajax_nopriv_' . $this->identifier, array( $this, 'maybe_handle' ) );
-
-			add_action( 'init', array( $this, 'add_hooks' ) );
-		}
-
-		/**
-		 * Add hooks.
-		 */
-		public function add_hooks() {
-			if ( ! is_user_logged_in() ) {
-				if ( ! session_id() ) {
-					session_start();
-				}
-				add_filter( 'nonce_user_logged_out', array( $this, 'nonce_user_logged_out' ) );
-			}
-		}
-
-		/**
-		 * When a user is logged out, ensure they have a unique nonce by using the session ID.
-		 *
-		 * @param int $uid User ID.
-		 *
-		 * @return string
-		 */
-		public function nonce_user_logged_out( $uid ) {
-			return session_id();
 		}
 
 		/**
@@ -166,10 +141,10 @@ if ( ! class_exists( 'WP_Async_Request' ) ) {
 		 * Check for correct nonce and pass to handler.
 		 */
 		public function maybe_handle() {
-			check_ajax_referer( $this->identifier, 'nonce' );
-
 			// Don't lock up other requests while processing.
 			session_write_close();
+
+			check_ajax_referer( $this->identifier, 'nonce' );
 
 			$this->handle();
 
