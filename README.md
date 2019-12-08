@@ -4,7 +4,7 @@ WP Background Processing can be used to fire off non-blocking asynchronous reque
 
 Inspired by [TechCrunch WP Asynchronous Tasks](https://github.com/techcrunch/wp-async-task).
 
-__Requires PHP 5.2+__
+__Requires PHP 5.6+__
 
 ### Async Request
 
