@@ -5,7 +5,7 @@
   "require": {
     "php": ">=5.2"
   },
-  "license": "GPL-2.0-only",
+  "license": "GPL-2.0-or-later",
   "authors": [
     {
       "name": "Delicious Brains",
