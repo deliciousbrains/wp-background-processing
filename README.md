@@ -11,7 +11,7 @@ __Requires PHP 5.2+__
 The recommended way to install this library in your project is by loading it through Composer:
 
 ```
-composer require a5hleyrich/wp-background-processing
+composer require deliciousbrains/wp-background-processing
 ```
 
 It is highly recommended to prefix wrap the library class files using [the Mozart package](https://packagist.org/packages/coenjacobs/mozart), to prevent collisions with other projects using this same library.
