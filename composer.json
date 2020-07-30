@@ -1,5 +1,5 @@
 {
-  "name": "a5hleyrich/wp-background-processing",
+  "name": "deliciousbrains/wp-background-processing",
   "description": "WP Background Processing can be used to fire off non-blocking asynchronous requests or as a background processing tool, allowing you to queue tasks.",
   "type": "library",
   "require": {
@@ -8,11 +8,11 @@
   "suggest": {
     "coenjacobs/mozart": "Easily wrap this library with your own prefix, to prevent collisions when multiple plugins use this library"
   },
-  "license": "GPLv2+",
+  "license": "GPL-2.0-or-later",
   "authors": [
     {
-      "name": "Ashley Rich",
-      "email": "hello@ashleyrich.com"
+      "name": "Delicious Brains",
+      "email": "nom@deliciousbrains.com"
     }
   ],
   "autoload": {

@@ -195,7 +195,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 				$column = 'meta_key';
 			}
 
-			$key = $this->identifier . '_batch_%';
+			$key = $wpdb->esc_like( $this->identifier . '_batch_' ) . '%';
 
 			$count = $wpdb->get_var( $wpdb->prepare( "
 			SELECT COUNT(*)
@@ -270,7 +270,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 				$value_column = 'meta_value';
 			}
 
-			$key = $this->identifier . '_batch_%';
+			$key = $wpdb->esc_like( $this->identifier . '_batch_' ) . '%';
 
 			$query = $wpdb->get_row( $wpdb->prepare( "
 			SELECT *
@@ -367,7 +367,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 				$memory_limit = '128M';
 			}
 
-			if ( ! $memory_limit || -1 === $memory_limit ) {
+			if ( ! $memory_limit || -1 === intval( $memory_limit ) ) {
 				// Unlimited, set to 32GB.
 				$memory_limit = '32000M';
 			}
@@ -416,7 +416,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 			$interval = apply_filters( $this->identifier . '_cron_interval', 5 );
 
 			if ( property_exists( $this, 'cron_interval' ) ) {
-				$interval = apply_filters( $this->identifier . '_cron_interval', $this->cron_interval_identifier );
+				$interval = apply_filters( $this->identifier . '_cron_interval', $this->cron_interval );
 			}
 
 			// Adds every 5 minutes to the existing schedules.
