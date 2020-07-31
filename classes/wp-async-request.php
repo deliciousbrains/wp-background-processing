@@ -95,10 +95,17 @@ abstract class WP_Async_Request {
 			return $this->query_args;
 		}
 
-		return array(
+		$args = array(
 			'action' => $this->identifier,
 			'nonce'  => wp_create_nonce( $this->identifier ),
 		);
+
+		/**
+		 * Filters the post arguments used during an async request.
+		 *
+		 * @param array $url
+		 */
+		return apply_filters( $this->identifier . '_query_args', $args );
 	}
 
 	/**
@@ -111,7 +118,14 @@ abstract class WP_Async_Request {
 			return $this->query_url;
 		}
 
-		return admin_url( 'admin-ajax.php' );
+		$url = admin_url( 'admin-ajax.php' );
+
+		/**
+		 * Filters the post arguments used during an async request.
+		 *
+		 * @param string $url
+		 */
+		return apply_filters( $this->identifier . '_query_url', $url );
 	}
 
 	/**
@@ -124,13 +138,20 @@ abstract class WP_Async_Request {
 			return $this->post_args;
 		}
 
-		return array(
+		$args = array(
 			'timeout'   => 0.01,
 			'blocking'  => false,
 			'body'      => $this->data,
 			'cookies'   => $_COOKIE,
 			'sslverify' => apply_filters( 'https_local_ssl_verify', false ),
 		);
+
+		/**
+		 * Filters the post arguments used during an async request.
+		 *
+		 * @param array $args
+		 */
+		return apply_filters( $this->identifier . '_post_args', $args );
 	}
 
 	/**
