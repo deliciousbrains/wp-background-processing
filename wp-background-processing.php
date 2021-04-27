@@ -7,12 +7,12 @@
 
 /*
 Plugin Name: WP Background Processing
-Plugin URI: https://github.com/A5hleyRich/wp-background-processing
+Plugin URI: https://github.com/jetty-dev/wp-background-processing
 Description: Asynchronous requests and background processing in WordPress.
-Author: Delicious Brains Inc.
-Version: 1.0
-Author URI: https://deliciousbrains.com/
-GitHub Plugin URI: https://github.com/A5hleyRich/wp-background-processing
+Author: Jetty
+Version: 1.0.2
+Author URI: https://jettyapp.com/
+GitHub Plugin URI: https://github.com/jetty-dev/wp-background-processing
 GitHub Branch: master
 */
 
