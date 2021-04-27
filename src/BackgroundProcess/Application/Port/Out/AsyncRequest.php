@@ -21,7 +21,9 @@ interface AsyncRequest
     /**
      * Dispatch the async request.
      *
+     * @return array<string, string>
+     *
      * @throws AsyncException
      */
-    public function dispatch(): void;
+    public function dispatch(): array;
 }
