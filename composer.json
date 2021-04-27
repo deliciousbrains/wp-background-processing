@@ -1,21 +1,21 @@
 {
-  "name": "deliciousbrains/wp-background-processing",
+  "name": "jetty-dev/wp-background-processing",
   "description": "WP Background Processing can be used to fire off non-blocking asynchronous requests or as a background processing tool, allowing you to queue tasks.",
   "type": "library",
   "require": {
-    "php": ">=5.2"
-  },
-  "suggest": {
-    "coenjacobs/mozart": "Easily wrap this library with your own prefix, to prevent collisions when multiple plugins use this library"
+    "php": ">=7.1"
   },
   "license": "GPL-2.0-or-later",
   "authors": [
     {
-      "name": "Delicious Brains",
-      "email": "nom@deliciousbrains.com"
+      "name": "Jetty",
+      "email": "dev@jettyapp.com"
     }
   ],
   "autoload": {
-    "classmap": [ "classes/" ]
+    "classmap": [ "classes/" ],
+    "psr-4": {
+      "Jetty\\BackgroundProcessing\\": "src"
+    }
   }
 }
