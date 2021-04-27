@@ -1,16 +1,22 @@
 <?php
+declare(strict_types=1);
+
 /**
  * WP Async Request
  *
  * @package WP-Background-Processing
  */
 
+use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\AsyncRequest;
+use Jetty\BackgroundProcessing\BackgroundProcess\Exception\AsyncException;
+
 /**
  * Abstract WP_Async_Request class.
  *
  * @abstract
  */
-abstract class WP_Async_Request {
+abstract class WP_Async_Request implements AsyncRequest
+{
 
 	/**
 	 * Prefix
@@ -60,29 +66,30 @@ abstract class WP_Async_Request {
 		add_action( 'wp_ajax_nopriv_' . $this->identifier, array( $this, 'maybe_handle' ) );
 	}
 
-	/**
-	 * Set data used during the request
-	 *
-	 * @param array $data Data.
-	 *
-	 * @return $this
-	 */
-	public function data( $data ) {
+
+	public function data(array $data): AsyncRequest
+    {
 		$this->data = $data;
 
 		return $this;
 	}
 
-	/**
-	 * Dispatch the async request
-	 *
-	 * @return array|WP_Error
-	 */
-	public function dispatch() {
+
+	public function dispatch(): array
+    {
 		$url  = add_query_arg( $this->get_query_args(), $this->get_query_url() );
 		$args = $this->get_post_args();
 
-		return wp_remote_post( esc_url_raw( $url ), $args );
+		$value = wp_remote_post( esc_url_raw( $url ), $args );
+
+		if ($value instanceof WP_Error)
+        {
+            throw new AsyncException(
+                $value->get_error_message()
+            );
+        }
+
+		return $value;
 	}
 
 	/**
