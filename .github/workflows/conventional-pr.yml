@@ -1,0 +1,13 @@
+name: Check PR semantics
+
+on: pull_request
+
+jobs:
+  conventional-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Conventional PRs
+        uses: Namchee/conventional-pr@v0.4.1
+        with:
+          access_token: ${{ secrets.ACCESS_TOKEN }}
+          link_issue: false
