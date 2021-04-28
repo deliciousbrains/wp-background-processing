@@ -62,13 +62,9 @@ abstract class WP_Background_Process extends WP_Async_Request {
 		add_filter( 'cron_schedules', array( $this, 'schedule_cron_healthcheck' ) );
 	}
 
-	/**
-	 * Dispatch
-	 *
-	 * @access public
-	 * @return void
-	 */
-	public function dispatch() {
+
+	public function dispatch(): array
+    {
 		// Schedule the cron healthcheck.
 		$this->schedule_event();
 
