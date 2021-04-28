@@ -1,5 +1,5 @@
 {
-  "name": "jetty-dev/wp-background-processing",
+  "name": "jetty-dev/background-processing",
   "description": "WP Background Processing can be used to fire off non-blocking asynchronous requests or as a background processing tool, allowing you to queue tasks.",
   "type": "library",
   "require": {
