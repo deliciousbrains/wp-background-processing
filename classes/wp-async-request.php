@@ -17,172 +17,180 @@ use Jetty\BackgroundProcessing\BackgroundProcess\Exception\AsyncException;
  */
 abstract class WP_Async_Request implements AsyncRequest
 {
+    /**
+     * Prefix
+     *
+     * (default value: 'wp')
+     *
+     * @var string
+     *
+     * @access protected
+     */
+    protected $prefix = 'wp';
 
-	/**
-	 * Prefix
-	 *
-	 * (default value: 'wp')
-	 *
-	 * @var string
-	 * @access protected
-	 */
-	protected $prefix = 'wp';
+    /**
+     * Action
+     *
+     * (default value: 'async_request')
+     *
+     * @var string
+     *
+     * @access protected
+     */
+    protected $action = 'async_request';
 
-	/**
-	 * Action
-	 *
-	 * (default value: 'async_request')
-	 *
-	 * @var string
-	 * @access protected
-	 */
-	protected $action = 'async_request';
+    /**
+     * Identifier
+     *
+     * @var mixed
+     *
+     * @access protected
+     */
+    protected $identifier;
 
-	/**
-	 * Identifier
-	 *
-	 * @var mixed
-	 * @access protected
-	 */
-	protected $identifier;
+    /**
+     * Data
+     *
+     * (default value: array())
+     *
+     * @var array
+     *
+     * @access protected
+     */
+    protected $data = [];
 
-	/**
-	 * Data
-	 *
-	 * (default value: array())
-	 *
-	 * @var array
-	 * @access protected
-	 */
-	protected $data = array();
-
-	/**
-	 * Initiate new async request
-	 */
-	public function __construct() {
-		$this->identifier = $this->prefix . '_' . $this->action;
-
-		add_action( 'wp_ajax_' . $this->identifier, array( $this, 'maybe_handle' ) );
-		add_action( 'wp_ajax_nopriv_' . $this->identifier, array( $this, 'maybe_handle' ) );
-	}
-
-
-	public function data(array $data): AsyncRequest
+    /**
+     * Initiate new async request
+     */
+    public function __construct()
     {
-		$this->data = $data;
+        $this->identifier = $this->prefix . '_' . $this->action;
 
-		return $this;
-	}
+        add_action('wp_ajax_' . $this->identifier, [ $this, 'maybe_handle' ]);
+        add_action('wp_ajax_nopriv_' . $this->identifier, [ $this, 'maybe_handle' ]);
+    }
 
 
-	public function dispatch(): array
+    public function data(array $data): AsyncRequest
     {
-		$url  = add_query_arg( $this->get_query_args(), $this->get_query_url() );
-		$args = $this->get_post_args();
+        $this->data = $data;
 
-		$value = wp_remote_post( esc_url_raw( $url ), $args );
+        return $this;
+    }
 
-		if ($value instanceof WP_Error)
+
+    public function dispatch(): array
+    {
+        $url  = add_query_arg($this->get_query_args(), $this->get_query_url());
+        $args = $this->get_post_args();
+
+        $value = wp_remote_post(esc_url_raw($url), $args);
+
+        if ($value instanceof WP_Error)
         {
             throw new AsyncException(
                 $value->get_error_message()
             );
         }
 
-		return $value;
-	}
+        return $value;
+    }
 
-	/**
-	 * Get query args
-	 *
-	 * @return array
-	 */
-	protected function get_query_args() {
-		if ( property_exists( $this, 'query_args' ) ) {
-			return $this->query_args;
-		}
+    /**
+     * Maybe handle
+     *
+     * Check for correct nonce and pass to handler.
+     */
+    public function maybe_handle(): void
+    {
+        // Don't lock up other requests while processing
+        session_write_close();
 
-		$args = array(
-			'action' => $this->identifier,
-			'nonce'  => wp_create_nonce( $this->identifier ),
-		);
+        check_ajax_referer($this->identifier, 'nonce');
 
-		/**
-		 * Filters the post arguments used during an async request.
-		 *
-		 * @param array $url
-		 */
-		return apply_filters( $this->identifier . '_query_args', $args );
-	}
+        $this->handle();
 
-	/**
-	 * Get query URL
-	 *
-	 * @return string
-	 */
-	protected function get_query_url() {
-		if ( property_exists( $this, 'query_url' ) ) {
-			return $this->query_url;
-		}
+        wp_die();
+    }
 
-		$url = admin_url( 'admin-ajax.php' );
+    /**
+     * Get query args
+     *
+     * @return array
+     */
+    protected function get_query_args(): array
+    {
+        if (property_exists($this, 'query_args'))
+        {
+            return $this->query_args;
+        }
 
-		/**
-		 * Filters the post arguments used during an async request.
-		 *
-		 * @param string $url
-		 */
-		return apply_filters( $this->identifier . '_query_url', $url );
-	}
+        $args = [
+            'action' => $this->identifier,
+            'nonce'  => wp_create_nonce($this->identifier),
+        ];
 
-	/**
-	 * Get post args
-	 *
-	 * @return array
-	 */
-	protected function get_post_args() {
-		if ( property_exists( $this, 'post_args' ) ) {
-			return $this->post_args;
-		}
+        /**
+         * Filters the post arguments used during an async request.
+         *
+         * @param array $url
+         */
+        return apply_filters($this->identifier . '_query_args', $args);
+    }
 
-		$args = array(
-			'timeout'   => 0.01,
-			'blocking'  => false,
-			'body'      => $this->data,
-			'cookies'   => $_COOKIE,
-			'sslverify' => apply_filters( 'https_local_ssl_verify', false ),
-		);
+    /**
+     * Get query URL
+     */
+    protected function get_query_url(): string
+    {
+        if (property_exists($this, 'query_url'))
+        {
+            return $this->query_url;
+        }
 
-		/**
-		 * Filters the post arguments used during an async request.
-		 *
-		 * @param array $args
-		 */
-		return apply_filters( $this->identifier . '_post_args', $args );
-	}
+        $url = admin_url('admin-ajax.php');
 
-	/**
-	 * Maybe handle
-	 *
-	 * Check for correct nonce and pass to handler.
-	 */
-	public function maybe_handle() {
-		// Don't lock up other requests while processing
-		session_write_close();
+        /**
+         * Filters the post arguments used during an async request.
+         *
+         * @param string $url
+         */
+        return apply_filters($this->identifier . '_query_url', $url);
+    }
 
-		check_ajax_referer( $this->identifier, 'nonce' );
+    /**
+     * Get post args
+     *
+     * @return array
+     */
+    protected function get_post_args(): array
+    {
+        if (property_exists($this, 'post_args'))
+        {
+            return $this->post_args;
+        }
 
-		$this->handle();
+        $args = [
+            'timeout'   => 0.01,
+            'blocking'  => false,
+            'body'      => $this->data,
+            'cookies'   => $_COOKIE,
+            'sslverify' => apply_filters('https_local_ssl_verify', false),
+        ];
 
-		wp_die();
-	}
+        /**
+         * Filters the post arguments used during an async request.
+         *
+         * @param array $args
+         */
+        return apply_filters($this->identifier . '_post_args', $args);
+    }
 
-	/**
-	 * Handle
-	 *
-	 * Override this method to perform any actions required
-	 * during the async request.
-	 */
-	abstract protected function handle();
-
+    /**
+     * Handle
+     *
+     * Override this method to perform any actions required
+     * during the async request.
+     */
+    abstract protected function handle(): void;
 }
