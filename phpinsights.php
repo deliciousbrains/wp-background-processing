@@ -66,7 +66,6 @@ return [
         // TODO: TEMPORARY UNTIL THIS FIX GETS RELEASED
         \NunoMaduro\PhpInsights\Domain\Insights\ForbiddenSecurityIssues::class,
         \PhpCsFixer\Fixer\Whitespace\NoExtraBlankLinesFixer::class,
-        \PhpCsFixer\Fixer\Whitespace\NoSpacesInsideParenthesisFixer::class,
         \PhpCsFixer\Fixer\FunctionNotation\FunctionDeclarationFixer::class,
         \SlevomatCodingStandard\Sniffs\TypeHints\UselessConstantTypeHintSniff::class,
         \SlevomatCodingStandard\Sniffs\Classes\SuperfluousExceptionNamingSniff::class
