@@ -13,7 +13,6 @@
     }
   ],
   "autoload": {
-    "classmap": [ "classes/" ],
     "psr-4": {
       "Jetty\\BackgroundProcessing\\": "src"
     }
