@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out;
 
+use Jetty\BackgroundProcessing\BackgroundProcess\Domain\AsyncRequest;
+
 /**
  * Describes the minimum functionality needed for an async request.
  */
