@@ -10,7 +10,7 @@ namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
  */
 
 
-use Jetty\BackgroundProcessing\BackgroundProcess\Domain\AsyncRequest;
+use Jetty\BackgroundProcessing\BackgroundProcess\Domain\BackgroundJob;
 use Jetty\BackgroundProcessing\BackgroundProcess\Exception\AsyncException;
 
 /**
@@ -18,7 +18,7 @@ use Jetty\BackgroundProcessing\BackgroundProcess\Exception\AsyncException;
  *
  * @abstract
  */
-abstract class WpAsyncRequest extends AsyncRequest
+abstract class WpAsyncRequest extends BackgroundJob
 {
     public function __construct(string $actionName)
     {
