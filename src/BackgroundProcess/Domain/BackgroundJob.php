@@ -35,7 +35,7 @@ abstract class BackgroundJob implements AsyncRequest
      */
     public function __construct(string $actionName, array $requestData)
     {
-        $this->actionName = $actionName;
+        $this->actionName  = $actionName;
         $this->requestData = $requestData;
     }
 

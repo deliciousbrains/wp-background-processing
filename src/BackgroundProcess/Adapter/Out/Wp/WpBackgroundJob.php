@@ -9,7 +9,6 @@ namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
  * @package WP-Background-Processing
  */
 
-
 use Jetty\BackgroundProcessing\BackgroundProcess\Domain\BackgroundJob;
 use Jetty\BackgroundProcessing\BackgroundProcess\Exception\AsyncException;
 
@@ -24,10 +23,10 @@ abstract class WpBackgroundJob extends BackgroundJob
     {
         parent::__construct(`{$actionName}_AsyncRequest`, $requestData);
 
-        add_action('wp_ajax_' . $this->actionName(), function() {
+        add_action('wp_ajax_' . $this->actionName(), function(): void {
             $this->maybe_handle();
         });
-        add_action('wp_ajax_nopriv_' . $this->actionName(), function() {
+        add_action('wp_ajax_nopriv_' . $this->actionName(), function(): void {
             $this->maybe_handle();
         });
     }
