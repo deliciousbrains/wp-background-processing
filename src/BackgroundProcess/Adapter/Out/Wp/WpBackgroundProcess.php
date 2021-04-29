@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
+
 /**
  * WP Background Process
  *
@@ -14,7 +16,7 @@ declare(strict_types=1);
  *
  * @extends WP_Async_Request
  */
-abstract class WP_Background_Process extends WP_Async_Request
+abstract class WpBackgroundProcess extends WpAsyncRequest
 {
     /**
      * Action

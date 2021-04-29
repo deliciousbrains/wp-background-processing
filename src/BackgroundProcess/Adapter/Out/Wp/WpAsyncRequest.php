@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
+
 /**
  * WP Async Request
  *
@@ -15,7 +17,7 @@ use Jetty\BackgroundProcessing\BackgroundProcess\Exception\AsyncException;
  *
  * @abstract
  */
-abstract class WP_Async_Request implements AsyncRequest
+abstract class WpAsyncRequest implements AsyncRequest
 {
     /**
      * Prefix
