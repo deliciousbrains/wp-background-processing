@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
 
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\BackgroundProcess;
+use stdClass;
 
 /**
  * WP Background Process
