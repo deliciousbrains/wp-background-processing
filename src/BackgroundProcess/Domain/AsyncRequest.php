@@ -11,14 +11,6 @@ use Jetty\BackgroundProcessing\BackgroundProcess\Exception\AsyncException;
 interface AsyncRequest
 {
     /**
-     * Sets the data that is sent and received on both sides of the request.
-     *
-     * @param array $data Data.
-     */
-    public function data(array $data): AsyncRequest;
-
-
-    /**
      * Dispatch the async request.
      *
      * @return array<string, string>

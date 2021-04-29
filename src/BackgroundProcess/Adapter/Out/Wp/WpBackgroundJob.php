@@ -18,11 +18,11 @@ use Jetty\BackgroundProcessing\BackgroundProcess\Exception\AsyncException;
  *
  * @abstract
  */
-abstract class WpAsyncRequest extends BackgroundJob
+abstract class WpBackgroundJob extends BackgroundJob
 {
-    public function __construct(string $actionName)
+    public function __construct(string $actionName, array $requestData)
     {
-        parent::__construct(`{$actionName}_AsyncRequest`);
+        parent::__construct(`{$actionName}_AsyncRequest`, $requestData);
 
         add_action('wp_ajax_' . $this->actionName(), function() {
             $this->maybe_handle();
@@ -131,7 +131,7 @@ abstract class WpAsyncRequest extends BackgroundJob
         $args = [
             'timeout'   => 0.01,
             'blocking'  => false,
-            'body'      => $this->data,
+            'body'      => $this->requestData(),
             'cookies'   => $_COOKIE,
             'sslverify' => apply_filters('https_local_ssl_verify', false),
         ];

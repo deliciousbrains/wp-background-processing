@@ -25,7 +25,7 @@ abstract class BackgroundJob implements AsyncRequest
      *
      * @var array
      */
-    private $requestData = [];
+    private $requestData;
 
 
     /**
@@ -33,22 +33,10 @@ abstract class BackgroundJob implements AsyncRequest
      *
      * @param string $actionName The action name of the request. This name should be URL-safe.
      */
-    public function __construct(string $actionName)
+    public function __construct(string $actionName, array $requestData)
     {
         $this->actionName = $actionName;
-    }
-
-
-    /**
-     * @param array $data
-     *
-     * @return $this
-     */
-    final public function data(array $data): AsyncRequest
-    {
-        $this->requestData = $data;
-
-        return $this;
+        $this->requestData = $requestData;
     }
 
 
