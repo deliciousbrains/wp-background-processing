@@ -10,7 +10,7 @@ use Jetty\BackgroundProcessing\BackgroundProcess\Exception\AsyncException;
  *
  * @abstract
  */
-abstract class BackgroundJob
+abstract class BackgroundJob implements AsyncRequest
 {
     /**
      * The name of the action.
