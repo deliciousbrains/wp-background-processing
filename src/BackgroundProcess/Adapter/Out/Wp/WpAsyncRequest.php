@@ -24,12 +24,16 @@ abstract class WpAsyncRequest extends AsyncRequest
     {
         parent::__construct(`{$actionName}_AsyncRequest`);
 
-        add_action('wp_ajax_' . $this->actionName(), [ $this, 'maybe_handle' ]);
-        add_action('wp_ajax_nopriv_' . $this->actionName(), [ $this, 'maybe_handle' ]);
+        add_action('wp_ajax_' . $this->actionName(), function() {
+            $this->maybe_handle();
+        });
+        add_action('wp_ajax_nopriv_' . $this->actionName(), function() {
+            $this->maybe_handle();
+        });
     }
 
 
-    public function dispatch(): array
+    final public function dispatch(): array
     {
         $url  = add_query_arg($this->get_query_args(), $this->get_query_url());
         $args = $this->get_post_args();
@@ -46,12 +50,13 @@ abstract class WpAsyncRequest extends AsyncRequest
         return $value;
     }
 
+
     /**
      * Maybe handle
      *
      * Check for correct nonce and pass to handler.
      */
-    public function maybe_handle(): void
+    private function maybe_handle(): void
     {
         // Don't lock up other requests while processing
         session_write_close();
@@ -63,12 +68,13 @@ abstract class WpAsyncRequest extends AsyncRequest
         wp_die();
     }
 
+
     /**
      * Get query args
      *
      * @return array
      */
-    protected function get_query_args(): array
+    private function get_query_args(): array
     {
         if (property_exists($this, 'query_args'))
         {
@@ -88,10 +94,11 @@ abstract class WpAsyncRequest extends AsyncRequest
         return apply_filters($this->actionName() . '_query_args', $args);
     }
 
+
     /**
      * Get query URL
      */
-    protected function get_query_url(): string
+    private function get_query_url(): string
     {
         if (property_exists($this, 'query_url'))
         {
@@ -108,12 +115,13 @@ abstract class WpAsyncRequest extends AsyncRequest
         return apply_filters($this->actionName() . '_query_url', $url);
     }
 
+
     /**
      * Get post args
      *
      * @return array
      */
-    protected function get_post_args(): array
+    private function get_post_args(): array
     {
         if (property_exists($this, 'post_args'))
         {
