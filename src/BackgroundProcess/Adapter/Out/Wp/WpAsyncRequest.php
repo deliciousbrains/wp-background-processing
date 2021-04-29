@@ -9,7 +9,8 @@ namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
  * @package WP-Background-Processing
  */
 
-use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\AsyncRequest;
+
+use Jetty\BackgroundProcessing\BackgroundProcess\Domain\AsyncRequest;
 use Jetty\BackgroundProcessing\BackgroundProcess\Exception\AsyncException;
 
 /**
@@ -17,67 +18,14 @@ use Jetty\BackgroundProcessing\BackgroundProcess\Exception\AsyncException;
  *
  * @abstract
  */
-abstract class WpAsyncRequest implements AsyncRequest
+abstract class WpAsyncRequest extends AsyncRequest
 {
-    /**
-     * Prefix
-     *
-     * (default value: 'wp')
-     *
-     * @var string
-     *
-     * @access protected
-     */
-    protected $prefix = 'wp';
-
-    /**
-     * Action
-     *
-     * (default value: 'async_request')
-     *
-     * @var string
-     *
-     * @access protected
-     */
-    protected $action = 'async_request';
-
-    /**
-     * Identifier
-     *
-     * @var mixed
-     *
-     * @access protected
-     */
-    protected $identifier;
-
-    /**
-     * Data
-     *
-     * (default value: array())
-     *
-     * @var array
-     *
-     * @access protected
-     */
-    protected $data = [];
-
-    /**
-     * Initiate new async request
-     */
-    public function __construct()
+    public function __construct(string $actionName)
     {
-        $this->identifier = $this->prefix . '_' . $this->action;
+        parent::__construct(`{$actionName}_AsyncRequest`);
 
-        add_action('wp_ajax_' . $this->identifier, [ $this, 'maybe_handle' ]);
-        add_action('wp_ajax_nopriv_' . $this->identifier, [ $this, 'maybe_handle' ]);
-    }
-
-
-    public function data(array $data): AsyncRequest
-    {
-        $this->data = $data;
-
-        return $this;
+        add_action('wp_ajax_' . $this->actionName(), [ $this, 'maybe_handle' ]);
+        add_action('wp_ajax_nopriv_' . $this->actionName(), [ $this, 'maybe_handle' ]);
     }
 
 
@@ -108,7 +56,7 @@ abstract class WpAsyncRequest implements AsyncRequest
         // Don't lock up other requests while processing
         session_write_close();
 
-        check_ajax_referer($this->identifier, 'nonce');
+        check_ajax_referer($this->actionName(), 'nonce');
 
         $this->handle();
 
@@ -128,8 +76,8 @@ abstract class WpAsyncRequest implements AsyncRequest
         }
 
         $args = [
-            'action' => $this->identifier,
-            'nonce'  => wp_create_nonce($this->identifier),
+            'action' => $this->actionName(),
+            'nonce'  => wp_create_nonce($this->actionName()),
         ];
 
         /**
@@ -137,7 +85,7 @@ abstract class WpAsyncRequest implements AsyncRequest
          *
          * @param array $url
          */
-        return apply_filters($this->identifier . '_query_args', $args);
+        return apply_filters($this->actionName() . '_query_args', $args);
     }
 
     /**
@@ -157,7 +105,7 @@ abstract class WpAsyncRequest implements AsyncRequest
          *
          * @param string $url
          */
-        return apply_filters($this->identifier . '_query_url', $url);
+        return apply_filters($this->actionName() . '_query_url', $url);
     }
 
     /**
@@ -185,14 +133,6 @@ abstract class WpAsyncRequest implements AsyncRequest
          *
          * @param array $args
          */
-        return apply_filters($this->identifier . '_post_args', $args);
+        return apply_filters($this->actionName() . '_post_args', $args);
     }
-
-    /**
-     * Handle
-     *
-     * Override this method to perform any actions required
-     * during the async request.
-     */
-    abstract protected function handle(): void;
 }
