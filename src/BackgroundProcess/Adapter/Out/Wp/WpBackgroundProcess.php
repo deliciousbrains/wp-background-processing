@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
 
+use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\BackgroundProcess;
+
 /**
  * WP Background Process
  *
@@ -16,7 +18,7 @@ namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
  *
  * @extends WP_Async_Request
  */
-abstract class WpBackgroundProcess extends WpAsyncRequest
+abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundProcess
 {
     /**
      * Action
@@ -82,26 +84,16 @@ abstract class WpBackgroundProcess extends WpAsyncRequest
         return parent::dispatch();
     }
 
-    /**
-     * Push to queue
-     *
-     * @param mixed $data Data.
-     *
-     * @return $this
-     */
-    public function push_to_queue($data)
+
+    public function push_to_queue(array $data): BackgroundProcess
     {
         $this->data[] = $data;
 
         return $this;
     }
 
-    /**
-     * Save queue
-     *
-     * @return $this
-     */
-    public function save()
+
+    public function save(): BackgroundProcess
     {
         $key = $this->generate_key();
 
@@ -121,7 +113,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest
      *
      * @return $this
      */
-    public function update(string $key, array $data)
+    public function update(string $key, array $data): BackgroundProcess
     {
         if (!empty($data))
         {
@@ -138,7 +130,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest
      *
      * @return $this
      */
-    public function delete(string $key)
+    public function delete(string $key): BackgroundProcess
     {
         delete_site_option($key);
 
@@ -228,11 +220,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest
         exit;
     }
 
-    /**
-     * Cancel Process
-     *
-     * Stop processing queue items, clear cronjob and delete batch.
-     */
+
     public function cancel_process(): void
     {
         if (!$this->is_queue_empty())
