@@ -342,7 +342,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
             foreach ($batch->data as $key => $value)
             {
-                $task = $this->task($value);
+                $task = $this->handleTask($value);
 
                 if ($task !== false)
                 {
@@ -486,7 +486,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     }
 
     /**
-     * Task
+     * Handle an individual queue task.
      *
      * Override this method to perform any actions required on each
      * queue item. Return the modified item for further processing
@@ -497,5 +497,5 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      *
      * @return mixed
      */
-    abstract protected function task($item);
+    abstract protected function handleTask($item);
 }
