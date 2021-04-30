@@ -35,8 +35,12 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         $this->cron_hook_identifier     = $this->identifier . '_cron';
         $this->cron_interval_identifier = $this->identifier . '_cron_interval';
 
-        add_action($this->cron_hook_identifier, [ $this, 'handle_cron_healthcheck' ]);
-        add_filter('cron_schedules', [ $this, 'schedule_cron_healthcheck' ]);
+        add_action($this->cron_hook_identifier, function() {
+            $this->handle_cron_healthcheck();
+        });
+        add_filter('cron_schedules', function($schedules) {
+            $this->schedule_cron_healthcheck($schedules);
+        });
     }
 
 
@@ -139,7 +143,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      *
      * @return mixed
      */
-    public function schedule_cron_healthcheck($schedules)
+    private function schedule_cron_healthcheck($schedules)
     {
         $interval = apply_filters($this->identifier . '_cron_interval', 5);
 
@@ -163,7 +167,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      * Restart the background process if not already running
      * and data exists in the queue.
      */
-    public function handle_cron_healthcheck(): void
+    private function handle_cron_healthcheck(): void
     {
         if ($this->is_process_running())
         {
@@ -184,7 +188,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     }
 
 
-    public function cancel_process(): void
+    public function cancel(): void
     {
         if (!$this->is_queue_empty())
         {
