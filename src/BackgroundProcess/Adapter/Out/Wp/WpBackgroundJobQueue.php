@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
 
-use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\BackgroundProcess;
+use Jetty\BackgroundProcessing\BackgroundProcess\Domain\BackgroundJobQueue;
+use Jetty\BackgroundProcessing\BackgroundProcess\Domain\AsyncRequest;
 use stdClass;
 
 /**
@@ -19,54 +20,17 @@ use stdClass;
  *
  * @extends WP_Async_Request
  */
-abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundProcess
+abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJobQueue
 {
-    /**
-     * Action
-     *
-     * (default value: 'background_process')
-     *
-     * @var string
-     *
-     * @access protected
-     */
-    protected $action = 'background_process';
-
-    /**
-     * Start time of current process.
-     *
-     * (default value: 0)
-     *
-     * @var int
-     *
-     * @access protected
-     */
-    protected $start_time = 0;
-
-    /**
-     * Cron_hook_identifier
-     *
-     * @var mixed
-     *
-     * @access protected
-     */
-    protected $cron_hook_identifier;
-
-    /**
-     * Cron_interval_identifier
-     *
-     * @var mixed
-     *
-     * @access protected
-     */
-    protected $cron_interval_identifier;
+    private $identifier;
 
     /**
      * Initiate new background process
      */
-    public function __construct()
+    public function __construct(string $actionName)
     {
-        parent::__construct();
+        $this->identifier = $actionName;
+        parent::__construct($actionName);
 
         $this->cron_hook_identifier     = $this->identifier . '_cron';
         $this->cron_interval_identifier = $this->identifier . '_cron_interval';
@@ -76,17 +40,18 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
     }
 
 
-    public function dispatch(): array
+    public function dispatch(array $data = []): array
     {
         // Schedule the cron healthcheck.
         $this->schedule_event();
 
         // Perform remote post.
-        return parent::dispatch();
+        $request = new WpAjaxRequest($this->identifier);
+        return $request->dispatch($data);
     }
 
 
-    public function push_to_queue(array $data): BackgroundProcess
+    public function push_to_queue(array $data): WpBackgroundJobQueue
     {
         $this->data[] = $data;
 
@@ -94,7 +59,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
     }
 
 
-    public function save(): BackgroundProcess
+    public function save(): BackgroundJobQueue
     {
         $key = $this->generate_key();
 
@@ -112,16 +77,14 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
      * @param string $key  Key.
      * @param array  $data Data.
      *
-     * @return $this
+     * @return void
      */
-    public function update(string $key, array $data): BackgroundProcess
+    private function update(string $key, array $data): void
     {
         if (!empty($data))
         {
             update_site_option($key, $data);
         }
-
-        return $this;
     }
 
     /**
@@ -129,13 +92,12 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
      *
      * @param string $key Key.
      *
-     * @return $this
+     * @return void
      */
-    public function delete(string $key): BackgroundProcess
+    private function delete(string $key): void
     {
         delete_site_option($key);
 
-        return $this;
     }
 
     /**
@@ -242,7 +204,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
      *
      * @param int $length Length.
      */
-    protected function generate_key(int $length = 64): string
+    private function generate_key(int $length = 64): string
     {
         $unique  = md5(microtime() . rand());
         $prepend = $this->identifier . '_batch_';
@@ -253,7 +215,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
     /**
      * Is queue empty
      */
-    protected function is_queue_empty(): bool
+    private function is_queue_empty(): bool
     {
         global $wpdb;
 
@@ -283,7 +245,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
      * Check whether the current process is already running
      * in a background process.
      */
-    protected function is_process_running()
+    private function is_process_running()
     {
         if (get_site_transient($this->identifier . '_process_lock'))
         {
@@ -301,7 +263,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
      * Override if applicable, but the duration should be greater than that
      * defined in the time_exceeded() method.
      */
-    protected function lock_process(): void
+    private function lock_process(): void
     {
         $this->start_time = time(); // Set start time of current process.
 
@@ -318,7 +280,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
      *
      * @return $this
      */
-    protected function unlock_process()
+    private function unlock_process()
     {
         delete_site_transient($this->identifier . '_process_lock');
 
@@ -330,7 +292,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
      *
      * @return stdClass Return the first batch from the queue
      */
-    protected function get_batch(): stdClass
+    private function get_batch(): stdClass
     {
         global $wpdb;
 
@@ -370,7 +332,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
      * Pass each queue item to the task handler, while remaining
      * within server memory and time limit constraints.
      */
-    protected function handle(): void
+    final protected function handle(): void
     {
         $this->lock_process();
 
@@ -430,7 +392,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
      * Ensures the batch process never exceeds 90%
      * of the maximum WordPress memory.
      */
-    protected function memory_exceeded(): bool
+    private function memory_exceeded(): bool
     {
         $memory_limit   = $this->get_memory_limit() * 0.9; // 90% of max memory
         $current_memory = memory_get_usage(true);
@@ -447,7 +409,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
     /**
      * Get memory limit
      */
-    protected function get_memory_limit(): int
+    private function get_memory_limit(): int
     {
         if (function_exists('ini_get'))
         {
@@ -474,7 +436,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
      * Ensures the batch never exceeds a sensible time limit.
      * A timeout limit of 30s is common on shared hosting.
      */
-    protected function time_exceeded(): bool
+    private function time_exceeded(): bool
     {
         $finish = $this->start_time + apply_filters($this->identifier . '_default_time_limit', 20); // 20 seconds
         $return = false;
@@ -493,7 +455,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
      * Override if applicable, but ensure that the below actions are
      * performed, or, call parent::complete().
      */
-    protected function complete(): void
+    private function complete(): void
     {
         // Unschedule the cron healthcheck.
         $this->clear_scheduled_event();
@@ -502,7 +464,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
     /**
      * Schedule event
      */
-    protected function schedule_event(): void
+    private function schedule_event(): void
     {
         if (!wp_next_scheduled($this->cron_hook_identifier))
         {
@@ -513,7 +475,7 @@ abstract class WpBackgroundProcess extends WpAsyncRequest implements BackgroundP
     /**
      * Clear scheduled event
      */
-    protected function clear_scheduled_event(): void
+    private function clear_scheduled_event(): void
     {
         $timestamp = wp_next_scheduled($this->cron_hook_identifier);
 

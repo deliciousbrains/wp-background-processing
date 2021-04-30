@@ -17,5 +17,5 @@ interface AsyncRequest
      *
      * @throws AsyncException
      */
-    public function dispatch(): array;
+    public function dispatch(array $data = []): array;
 }
