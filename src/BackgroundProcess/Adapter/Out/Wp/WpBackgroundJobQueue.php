@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
 
 use Jetty\BackgroundProcessing\BackgroundProcess\Domain\BackgroundJobQueue;
-use Jetty\BackgroundProcessing\BackgroundProcess\Domain\AsyncRequest;
 use stdClass;
 
 /**
@@ -35,10 +34,10 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         $this->cron_hook_identifier     = $this->identifier . '_cron';
         $this->cron_interval_identifier = $this->identifier . '_cron_interval';
 
-        add_action($this->cron_hook_identifier, function() {
+        add_action($this->cron_hook_identifier, function(): void {
             $this->handleCronHealthcheck();
         });
-        add_filter('cron_schedules', function($schedules) {
+        add_filter('cron_schedules', function($schedules): void {
             $this->scheduleCronHealthcheck($schedules);
         });
     }
@@ -75,33 +74,17 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         return $this;
     }
 
-    /**
-     * Update queue
-     *
-     * @param string $key  Key.
-     * @param array  $data Data.
-     *
-     * @return void
-     */
-    private function update(string $key, array $data): void
+
+    public function cancel(): void
     {
-        if (!empty($data))
+        if (!$this->isQueueEmpty())
         {
-            update_site_option($key, $data);
+            $batch = $this->getBatch();
+
+            $this->delete($batch->key);
+
+            wp_clear_scheduled_hook($this->cron_hook_identifier);
         }
-    }
-
-    /**
-     * Delete queue
-     *
-     * @param string $key Key.
-     *
-     * @return void
-     */
-    private function delete(string $key): void
-    {
-        delete_site_option($key);
-
     }
 
     /**
@@ -132,6 +115,104 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         $this->handle();
 
         wp_die();
+    }
+
+    /**
+     * Handle
+     *
+     * Pass each queue item to the task handler, while remaining
+     * within server memory and time limit constraints.
+     */
+    final protected function handle(): void
+    {
+        $this->lockProcess();
+
+        do
+        {
+            $batch = $this->getBatch();
+
+            foreach ($batch->data as $key => $value)
+            {
+                $task = $this->handleTask($value);
+
+                if ($task !== false)
+                {
+                    $batch->data[$key] = $task;
+                }
+                else
+                {
+                    unset($batch->data[$key]);
+                }
+
+                if ($this->timeExceeded() || $this->memoryExceeded())
+                {
+                    // Batch limits reached.
+                    break;
+                }
+            }
+
+            // Update or delete current batch.
+            if (!empty($batch->data))
+            {
+                $this->update($batch->key, $batch->data);
+            }
+            else
+            {
+                $this->delete($batch->key);
+            }
+        } while (!$this->timeExceeded() && !$this->memoryExceeded() && !$this->isQueueEmpty());
+
+        $this->unlockProcess();
+
+        // Start next batch or complete process.
+        if (!$this->isQueueEmpty())
+        {
+            $this->dispatch();
+        }
+        else
+        {
+            $this->complete();
+        }
+
+        wp_die();
+    }
+
+    /**
+     * Handle an individual queue task.
+     *
+     * Override this method to perform any actions required on each
+     * queue item. Return the modified item for further processing
+     * in the next pass through. Or, return false to remove the
+     * item from the queue.
+     *
+     * @param mixed $item Queue item to iterate over.
+     *
+     * @return mixed
+     */
+    abstract protected function handleTask($item);
+
+    /**
+     * Update queue
+     *
+     * @param string $key  Key.
+     * @param array  $data Data.
+     */
+    private function update(string $key, array $data): void
+    {
+        if (!empty($data))
+        {
+            update_site_option($key, $data);
+        }
+    }
+
+    /**
+     * Delete queue
+     *
+     * @param string $key Key.
+     */
+    private function delete(string $key): void
+    {
+        delete_site_option($key);
     }
 
     /**
@@ -185,19 +266,6 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         $this->handle();
 
         exit;
-    }
-
-
-    public function cancel(): void
-    {
-        if (!$this->isQueueEmpty())
-        {
-            $batch = $this->getBatch();
-
-            $this->delete($batch->key);
-
-            wp_clear_scheduled_hook($this->cron_hook_identifier);
-        }
     }
 
     /**
@@ -331,66 +399,6 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     }
 
     /**
-     * Handle
-     *
-     * Pass each queue item to the task handler, while remaining
-     * within server memory and time limit constraints.
-     */
-    final protected function handle(): void
-    {
-        $this->lockProcess();
-
-        do
-        {
-            $batch = $this->getBatch();
-
-            foreach ($batch->data as $key => $value)
-            {
-                $task = $this->handleTask($value);
-
-                if ($task !== false)
-                {
-                    $batch->data[$key] = $task;
-                }
-                else
-                {
-                    unset($batch->data[$key]);
-                }
-
-                if ($this->timeExceeded() || $this->memoryExceeded())
-                {
-                    // Batch limits reached.
-                    break;
-                }
-            }
-
-            // Update or delete current batch.
-            if (!empty($batch->data))
-            {
-                $this->update($batch->key, $batch->data);
-            }
-            else
-            {
-                $this->delete($batch->key);
-            }
-        } while (!$this->timeExceeded() && !$this->memoryExceeded() && !$this->isQueueEmpty());
-
-        $this->unlockProcess();
-
-        // Start next batch or complete process.
-        if (!$this->isQueueEmpty())
-        {
-            $this->dispatch();
-        }
-        else
-        {
-            $this->complete();
-        }
-
-        wp_die();
-    }
-
-    /**
      * Memory exceeded
      *
      * Ensures the batch process never exceeds 90%
@@ -488,18 +496,4 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
             wp_unschedule_event($timestamp, $this->cron_hook_identifier);
         }
     }
-
-    /**
-     * Handle an individual queue task.
-     *
-     * Override this method to perform any actions required on each
-     * queue item. Return the modified item for further processing
-     * in the next pass through. Or, return false to remove the
-     * item from the queue.
-     *
-     * @param mixed $item Queue item to iterate over.
-     *
-     * @return mixed
-     */
-    abstract protected function handleTask($item);
 }

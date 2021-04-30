@@ -92,6 +92,7 @@ final class WpAjaxRequest implements AsyncRequest
      * Get post args
      *
      * @param array $data The data, if any, to include in the request.
+     *
      * @return array
      */
     private function generatePostArguments(array $data = []): array
