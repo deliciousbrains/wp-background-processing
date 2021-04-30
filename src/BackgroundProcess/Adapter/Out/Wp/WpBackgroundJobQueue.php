@@ -51,7 +51,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     }
 
 
-    public function push_to_queue(array $data): WpBackgroundJobQueue
+    public function pushToQueue(array $data): BackgroundJobQueue
     {
         $this->data[] = $data;
 
