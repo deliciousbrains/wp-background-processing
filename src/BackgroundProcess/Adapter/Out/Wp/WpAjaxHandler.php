@@ -31,7 +31,7 @@ abstract class WpAjaxHandler
      *
      * Check for the correct nonce and pass to handler.
      */
-    private function maybeHandle(): void
+    protected function maybeHandle(): void
     {
         // Don't lock up other requests while processing
         session_write_close();

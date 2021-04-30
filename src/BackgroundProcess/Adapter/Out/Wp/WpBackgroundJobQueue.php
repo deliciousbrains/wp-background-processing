@@ -110,7 +110,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      * Checks whether data exists within the queue and that
      * the process is not already running.
      */
-    public function maybe_handle(): void
+    protected function maybeHandle(): void
     {
         // Don't lock up other requests while processing
         session_write_close();
