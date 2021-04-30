@@ -43,7 +43,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     }
 
 
-    public function dispatch(array $data = []): array
+    final public function dispatch(array $data = []): array
     {
         // Schedule the cron healthcheck.
         $this->scheduleEvent();
@@ -54,7 +54,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     }
 
 
-    public function pushToQueue(array $data): BackgroundJobQueue
+    final public function pushToQueue(array $data): BackgroundJobQueue
     {
         $this->data[] = $data;
 
@@ -62,7 +62,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     }
 
 
-    public function save(): BackgroundJobQueue
+    final public function save(): BackgroundJobQueue
     {
         $key = $this->generateKey();
 
@@ -75,7 +75,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     }
 
 
-    public function cancel(): void
+    final public function cancel(): void
     {
         if (!$this->isQueueEmpty())
         {
@@ -93,12 +93,12 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      * Checks whether data exists within the queue and that
      * the process is not already running.
      */
-    protected function maybeHandle(): void
+    final protected function maybeHandle(): void
     {
         // Don't lock up other requests while processing
         session_write_close();
 
-        if ($this->is_process_running())
+        if ($this->isProcessRunning())
         {
             // Background process already running.
             wp_die();
@@ -250,7 +250,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      */
     private function handleCronHealthcheck(): void
     {
-        if ($this->is_process_running())
+        if ($this->isProcessRunning())
         {
             // Background process already running.
             exit;
@@ -317,7 +317,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      * Check whether the current process is already running
      * in a background process.
      */
-    private function is_process_running()
+    private function isProcessRunning(): bool
     {
         if (get_site_transient($this->identifier . '_process_lock'))
         {
@@ -350,13 +350,11 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      *
      * Unlock the process so that other instances can spawn.
      *
-     * @return $this
+     * @return void
      */
-    private function unlockProcess()
+    private function unlockProcess(): void
     {
         delete_site_transient($this->identifier . '_process_lock');
-
-        return $this;
     }
 
     /**
