@@ -36,10 +36,10 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         $this->cron_interval_identifier = $this->identifier . '_cron_interval';
 
         add_action($this->cron_hook_identifier, function() {
-            $this->handle_cron_healthcheck();
+            $this->handleCronHealthcheck();
         });
         add_filter('cron_schedules', function($schedules) {
-            $this->schedule_cron_healthcheck($schedules);
+            $this->scheduleCronHealthcheck($schedules);
         });
     }
 
@@ -47,7 +47,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     public function dispatch(array $data = []): array
     {
         // Schedule the cron healthcheck.
-        $this->schedule_event();
+        $this->scheduleEvent();
 
         // Perform remote post.
         $request = new WpAjaxRequest($this->identifier);
@@ -65,7 +65,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
     public function save(): BackgroundJobQueue
     {
-        $key = $this->generate_key();
+        $key = $this->generateKey();
 
         if (!empty($this->data))
         {
@@ -121,7 +121,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
             wp_die();
         }
 
-        if ($this->is_queue_empty())
+        if ($this->isQueueEmpty())
         {
             // No data to process.
             wp_die();
@@ -143,7 +143,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      *
      * @return mixed
      */
-    private function schedule_cron_healthcheck($schedules)
+    private function scheduleCronHealthcheck($schedules)
     {
         $interval = apply_filters($this->identifier . '_cron_interval', 5);
 
@@ -167,7 +167,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      * Restart the background process if not already running
      * and data exists in the queue.
      */
-    private function handle_cron_healthcheck(): void
+    private function handleCronHealthcheck(): void
     {
         if ($this->is_process_running())
         {
@@ -175,10 +175,10 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
             exit;
         }
 
-        if ($this->is_queue_empty())
+        if ($this->isQueueEmpty())
         {
             // No data to process.
-            $this->clear_scheduled_event();
+            $this->clearScheduledEvent();
             exit;
         }
 
@@ -190,9 +190,9 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
     public function cancel(): void
     {
-        if (!$this->is_queue_empty())
+        if (!$this->isQueueEmpty())
         {
-            $batch = $this->get_batch();
+            $batch = $this->getBatch();
 
             $this->delete($batch->key);
 
@@ -208,7 +208,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      *
      * @param int $length Length.
      */
-    private function generate_key(int $length = 64): string
+    private function generateKey(int $length = 64): string
     {
         $unique  = md5(microtime() . rand());
         $prepend = $this->identifier . '_batch_';
@@ -219,7 +219,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     /**
      * Is queue empty
      */
-    private function is_queue_empty(): bool
+    private function isQueueEmpty(): bool
     {
         global $wpdb;
 
@@ -267,7 +267,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      * Override if applicable, but the duration should be greater than that
      * defined in the time_exceeded() method.
      */
-    private function lock_process(): void
+    private function lockProcess(): void
     {
         $this->start_time = time(); // Set start time of current process.
 
@@ -284,7 +284,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      *
      * @return $this
      */
-    private function unlock_process()
+    private function unlockProcess()
     {
         delete_site_transient($this->identifier . '_process_lock');
 
@@ -296,7 +296,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      *
      * @return stdClass Return the first batch from the queue
      */
-    private function get_batch(): stdClass
+    private function getBatch(): stdClass
     {
         global $wpdb;
 
@@ -338,11 +338,11 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      */
     final protected function handle(): void
     {
-        $this->lock_process();
+        $this->lockProcess();
 
         do
         {
-            $batch = $this->get_batch();
+            $batch = $this->getBatch();
 
             foreach ($batch->data as $key => $value)
             {
@@ -357,7 +357,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
                     unset($batch->data[$key]);
                 }
 
-                if ($this->time_exceeded() || $this->memory_exceeded())
+                if ($this->timeExceeded() || $this->memoryExceeded())
                 {
                     // Batch limits reached.
                     break;
@@ -373,12 +373,12 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
             {
                 $this->delete($batch->key);
             }
-        } while (!$this->time_exceeded() && !$this->memory_exceeded() && !$this->is_queue_empty());
+        } while (!$this->timeExceeded() && !$this->memoryExceeded() && !$this->isQueueEmpty());
 
-        $this->unlock_process();
+        $this->unlockProcess();
 
         // Start next batch or complete process.
-        if (!$this->is_queue_empty())
+        if (!$this->isQueueEmpty())
         {
             $this->dispatch();
         }
@@ -396,9 +396,9 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      * Ensures the batch process never exceeds 90%
      * of the maximum WordPress memory.
      */
-    private function memory_exceeded(): bool
+    private function memoryExceeded(): bool
     {
-        $memory_limit   = $this->get_memory_limit() * 0.9; // 90% of max memory
+        $memory_limit   = $this->getMemoryLimit() * 0.9; // 90% of max memory
         $current_memory = memory_get_usage(true);
         $return         = false;
 
@@ -413,7 +413,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     /**
      * Get memory limit
      */
-    private function get_memory_limit(): int
+    private function getMemoryLimit(): int
     {
         if (function_exists('ini_get'))
         {
@@ -440,7 +440,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      * Ensures the batch never exceeds a sensible time limit.
      * A timeout limit of 30s is common on shared hosting.
      */
-    private function time_exceeded(): bool
+    private function timeExceeded(): bool
     {
         $finish = $this->start_time + apply_filters($this->identifier . '_default_time_limit', 20); // 20 seconds
         $return = false;
@@ -462,13 +462,13 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     private function complete(): void
     {
         // Unschedule the cron healthcheck.
-        $this->clear_scheduled_event();
+        $this->clearScheduledEvent();
     }
 
     /**
      * Schedule event
      */
-    private function schedule_event(): void
+    private function scheduleEvent(): void
     {
         if (!wp_next_scheduled($this->cron_hook_identifier))
         {
@@ -479,7 +479,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     /**
      * Clear scheduled event
      */
-    private function clear_scheduled_event(): void
+    private function clearScheduledEvent(): void
     {
         $timestamp = wp_next_scheduled($this->cron_hook_identifier);
 
