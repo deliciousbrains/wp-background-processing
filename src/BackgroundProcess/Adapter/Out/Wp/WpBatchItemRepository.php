@@ -87,7 +87,7 @@ final class WpBatchItemRepository implements QueueBatchRepository
 
         $rawResults = $wpdb->get_results($query, ARRAY_A);
 
-        foreach($rawResults as $result)
+        foreach ($rawResults as $result)
         {
             $batchItems[] = new WpBatchItem($result[$column], maybe_unserialize($result[$value_column]));
         }

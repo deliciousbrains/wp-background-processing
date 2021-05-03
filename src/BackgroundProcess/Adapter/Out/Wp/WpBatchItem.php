@@ -23,15 +23,13 @@ class WpBatchItem implements BatchItem
 
     public function __construct(string $key, $value)
     {
-        $this->key = $key;
+        $this->key   = $key;
         $this->value = $value;
     }
 
 
     /**
      * The key (meta) of the batch item.
-     *
-     * @return string
      */
     public function key(): string
     {

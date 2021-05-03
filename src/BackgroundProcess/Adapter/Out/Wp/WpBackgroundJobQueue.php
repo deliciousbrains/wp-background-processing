@@ -83,7 +83,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         {
             $batch = $this->getBatch();
 
-            foreach($batch as $item)
+            foreach ($batch as $item)
             {
                 $this->batchRepository->deleteBatchItem($item);
             }
@@ -144,7 +144,8 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
             $this->batchRepository->deleteBatchItem($item);
 
-            if ($this->timeExceeded() || $this->memoryExceeded()) {
+            if ($this->timeExceeded() || $this->memoryExceeded())
+            {
                 // Batch limits reached.
                 break;
             }
@@ -282,8 +283,6 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      * Unlock process
      *
      * Unlock the process so that other instances can spawn.
-     *
-     * @return void
      */
     private function unlockProcess(): void
     {
