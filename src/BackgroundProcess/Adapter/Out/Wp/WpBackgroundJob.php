@@ -3,18 +3,11 @@ declare(strict_types=1);
 
 namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
 
-/**
- * WP Async Request
- *
- * @package WP-Background-Processing
- */
-
 use Jetty\BackgroundProcessing\BackgroundProcess\Domain\AsyncRequest;
 
 /**
- * Abstract WP_Async_Request class.
- *
- * @abstract
+ * Implements a background job for use with WordPress. Override handle() to
+ * process the request.
  */
 abstract class WpBackgroundJob extends WpAjaxHandler implements AsyncRequest
 {
