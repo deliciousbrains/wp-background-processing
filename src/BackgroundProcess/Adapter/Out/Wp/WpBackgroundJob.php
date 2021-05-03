@@ -18,6 +18,9 @@ use Jetty\BackgroundProcessing\BackgroundProcess\Domain\AsyncRequest;
  */
 abstract class WpBackgroundJob extends WpAjaxHandler implements AsyncRequest
 {
+    /**
+     * @var string
+     */
     private $actionName;
 
     public function __construct(string $actionName)
