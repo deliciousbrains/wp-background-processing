@@ -26,6 +26,8 @@ abstract class WpBackgroundJob extends WpAjaxHandler implements AsyncRequest
     public function __construct(string $actionName)
     {
         $this->actionName = $actionName;
+
+        parent::__construct($actionName);
     }
 
 
