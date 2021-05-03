@@ -7,20 +7,14 @@ use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\QueueBatch
 use Jetty\BackgroundProcessing\BackgroundProcess\Domain\BackgroundJobQueue;
 
 /**
- * WP Background Process
- *
- * @package WP-Background-Processing
- */
-
-/**
- * Abstract WP_Background_Process class.
- *
- * @abstract
- *
- * @extends WP_Async_Request
+ * Defines a background job queue that operates on multiple pieces in the
+ * background.
  */
 abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJobQueue
 {
+    /**
+     * @var string
+     */
     private $identifier;
 
     /**
@@ -92,6 +86,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         }
     }
 
+
     /**
      * Maybe process queue
      *
@@ -121,6 +116,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
         wp_die();
     }
+
 
     /**
      * Handle
@@ -168,6 +164,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         wp_die();
     }
 
+
     /**
      * Handle an individual queue task.
      *
@@ -210,6 +207,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         return $schedules;
     }
 
+
     /**
      * Handle cron healthcheck
      *
@@ -245,6 +243,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         return $this->batchRepository->batchItemsExist();
     }
 
+
     /**
      * Is process running
      *
@@ -261,6 +260,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
         return false;
     }
+
 
     /**
      * Lock process
@@ -279,6 +279,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         set_site_transient($this->identifier . '_process_lock', microtime(), $lock_duration);
     }
 
+
     /**
      * Unlock process
      *
@@ -289,6 +290,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         delete_site_transient($this->identifier . '_process_lock');
     }
 
+
     /**
      * Get batch
      */
@@ -296,6 +298,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     {
         return $this->batchRepository->readBatchItems();
     }
+
 
     /**
      * Memory exceeded
@@ -316,6 +319,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
         return apply_filters($this->identifier . '_memory_exceeded', $return);
     }
+
 
     /**
      * Get memory limit
@@ -341,6 +345,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         return wp_convert_hr_to_bytes($memory_limit);
     }
 
+
     /**
      * Time exceeded.
      *
@@ -360,6 +365,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         return apply_filters($this->identifier . '_time_exceeded', $return);
     }
 
+
     /**
      * Complete.
      *
@@ -372,6 +378,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         $this->clearScheduledEvent();
     }
 
+
     /**
      * Schedule event
      */
@@ -382,6 +389,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
             wp_schedule_event(time(), $this->cron_interval_identifier, $this->cron_hook_identifier);
         }
     }
+
 
     /**
      * Clear scheduled event

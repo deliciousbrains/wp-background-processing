@@ -8,7 +8,7 @@ use Jetty\BackgroundProcessing\BackgroundProcess\Domain\BatchItem;
 /**
  * BatchItem implementation for WordPress meta tables.
  */
-class WpBatchItem implements BatchItem
+final class WpBatchItem implements BatchItem
 {
     /**
      * @var string

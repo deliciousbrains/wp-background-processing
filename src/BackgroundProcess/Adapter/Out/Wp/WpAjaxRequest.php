@@ -23,7 +23,7 @@ final class WpAjaxRequest implements AsyncRequest
     }
 
 
-    final public function dispatch(array $data = []): array
+    public function dispatch(array $data = []): array
     {
         $url  = add_query_arg($this->generateQueryArguments(), $this->generateQueryUrl());
         $args = $this->generatePostArguments($data);
