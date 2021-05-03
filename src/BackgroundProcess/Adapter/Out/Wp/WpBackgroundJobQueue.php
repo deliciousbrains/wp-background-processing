@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
 
+use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\QueueBatchRepository;
 use Jetty\BackgroundProcessing\BackgroundProcess\Domain\BackgroundJobQueue;
-use stdClass;
 
 /**
  * WP Background Process
@@ -24,6 +24,11 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     private $identifier;
 
     /**
+     * @var QueueBatchRepository
+     */
+    private $batchRepository;
+
+    /**
      * Initiate new background process
      */
     public function __construct(string $actionName)
@@ -40,6 +45,8 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         add_filter('cron_schedules', function($schedules): void {
             $this->scheduleCronHealthcheck($schedules);
         });
+
+        $this->batchRepository = new WpBatchItemRepository($actionName);
     }
 
 
@@ -56,7 +63,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
     final public function pushToQueue(array $data): BackgroundJobQueue
     {
-        $this->data[] = $data;
+        $this->batchRepository->createBatchItem($data);
 
         return $this;
     }
@@ -64,12 +71,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
     final public function save(): BackgroundJobQueue
     {
-        $key = $this->generateKey();
-
-        if (!empty($this->data))
-        {
-            update_site_option($key, $this->data);
-        }
+        $this->batchRepository->persist();
 
         return $this;
     }
@@ -81,7 +83,10 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         {
             $batch = $this->getBatch();
 
-            $this->delete($batch->key);
+            foreach($batch as $item)
+            {
+                $this->batchRepository->deleteBatchItem($item);
+            }
 
             wp_clear_scheduled_hook($this->cron_hook_identifier);
         }
@@ -127,42 +132,27 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     {
         $this->lockProcess();
 
-        do
+        $items = $this->getBatch();
+
+        $currentItem = 0;
+
+        while (!$this->timeExceeded() && !$this->memoryExceeded() && count($items) > $currentItem)
         {
-            $batch = $this->getBatch();
+            $item = $items[$currentItem];
 
-            foreach ($batch->data as $key => $value)
-            {
-                $task = $this->handleTask($value);
+            $this->handleTask($item->value());
 
-                if ($task !== false)
-                {
-                    $batch->data[$key] = $task;
-                }
-                else
-                {
-                    unset($batch->data[$key]);
-                }
+            $this->batchRepository->deleteBatchItem($item);
 
-                if ($this->timeExceeded() || $this->memoryExceeded())
-                {
-                    // Batch limits reached.
-                    break;
-                }
+            if ($this->timeExceeded() || $this->memoryExceeded()) {
+                // Batch limits reached.
+                break;
             }
 
-            // Update or delete current batch.
-            if (!empty($batch->data))
-            {
-                $this->update($batch->key, $batch->data);
-            }
-            else
-            {
-                $this->delete($batch->key);
-            }
-        } while (!$this->timeExceeded() && !$this->memoryExceeded() && !$this->isQueueEmpty());
+            $currentItem++;
+        }
 
-        $this->unlockProcess();
+        $this->batchRepository->persist();
 
         // Start next batch or complete process.
         if (!$this->isQueueEmpty())
@@ -191,29 +181,6 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      */
     abstract protected function handleTask($item);
 
-    /**
-     * Update queue
-     *
-     * @param string $key  Key.
-     * @param array  $data Data.
-     */
-    private function update(string $key, array $data): void
-    {
-        if (!empty($data))
-        {
-            update_site_option($key, $data);
-        }
-    }
-
-    /**
-     * Delete queue
-     *
-     * @param string $key Key.
-     */
-    private function delete(string $key): void
-    {
-        delete_site_option($key);
-    }
 
     /**
      * Schedule cron healthcheck
@@ -268,47 +235,13 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         exit;
     }
 
-    /**
-     * Generate key
-     *
-     * Generates a unique key based on microtime. Queue items are
-     * given a unique key so that they can be merged upon save.
-     *
-     * @param int $length Length.
-     */
-    private function generateKey(int $length = 64): string
-    {
-        $unique  = md5(microtime() . rand());
-        $prepend = $this->identifier . '_batch_';
-
-        return substr($prepend . $unique, 0, $length);
-    }
 
     /**
      * Is queue empty
      */
     private function isQueueEmpty(): bool
     {
-        global $wpdb;
-
-        $table  = $wpdb->options;
-        $column = 'option_name';
-
-        if (is_multisite())
-        {
-            $table  = $wpdb->sitemeta;
-            $column = 'meta_key';
-        }
-
-        $key = $wpdb->esc_like($this->identifier . '_batch_') . '%';
-
-        $count = $wpdb->get_var($wpdb->prepare("
-			SELECT COUNT(*)
-			FROM {$table}
-			WHERE {$column} LIKE %s
-		", $key));
-
-        return $count > 0 ? false : true;
+        return $this->batchRepository->batchItemsExist();
     }
 
     /**
@@ -359,41 +292,10 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
     /**
      * Get batch
-     *
-     * @return stdClass Return the first batch from the queue
      */
-    private function getBatch(): stdClass
+    private function getBatch(): array
     {
-        global $wpdb;
-
-        $table        = $wpdb->options;
-        $column       = 'option_name';
-        $key_column   = 'option_id';
-        $value_column = 'option_value';
-
-        if (is_multisite())
-        {
-            $table        = $wpdb->sitemeta;
-            $column       = 'meta_key';
-            $key_column   = 'meta_id';
-            $value_column = 'meta_value';
-        }
-
-        $key = $wpdb->esc_like($this->identifier . '_batch_') . '%';
-
-        $query = $wpdb->get_row($wpdb->prepare("
-			SELECT *
-			FROM {$table}
-			WHERE {$column} LIKE %s
-			ORDER BY {$key_column} ASC
-			LIMIT 1
-		", $key));
-
-        $batch       = new stdClass();
-        $batch->key  = $query->$column;
-        $batch->data = maybe_unserialize($query->$value_column);
-
-        return $batch;
+        return $this->batchRepository->readBatchItems();
     }
 
     /**
