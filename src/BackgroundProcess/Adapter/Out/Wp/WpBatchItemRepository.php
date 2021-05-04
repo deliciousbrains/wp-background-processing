@@ -120,4 +120,9 @@ final class WpBatchItemRepository implements QueueBatchRepository
         $unique = substr($unique, 0, $length);
         return $this->batchPrefix . $unique;
     }
+
+    public function tryGetLock(): bool
+    {
+        // TODO: Implement tryGetLock() method.
+    }
 }

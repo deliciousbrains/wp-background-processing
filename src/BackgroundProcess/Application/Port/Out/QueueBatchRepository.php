@@ -38,6 +38,9 @@ interface QueueBatchRepository
     public function deleteBatchItem(BatchItem $item): QueueBatchRepository;
 
 
+    public function tryGetLock(): bool;
+
+
     /**
      * Persists any repository changes made in memory.
      */
