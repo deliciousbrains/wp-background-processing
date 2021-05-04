@@ -240,7 +240,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      */
     private function isQueueEmpty(): bool
     {
-        return $this->batchRepository->batchItemsExist();
+        return !$this->batchRepository->batchItemsExist();
     }
 
 
