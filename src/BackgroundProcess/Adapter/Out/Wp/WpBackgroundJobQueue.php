@@ -23,9 +23,14 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     private $batchRepository;
 
     /**
+     * @var int
+     */
+    private $start_time = 0;
+
+    /**
      * Initiate new background process
      */
-    public function __construct(string $actionName)
+    public function __construct(QueueBatchRepository $batchRepository, string $actionName)
     {
         $this->identifier = $actionName;
         parent::__construct($actionName);
@@ -40,7 +45,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
             $this->scheduleCronHealthcheck($schedules);
         });
 
-        $this->batchRepository = new WpBatchItemRepository($actionName);
+        $this->batchRepository = $batchRepository;
     }
 
 
@@ -98,7 +103,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         // Don't lock up other requests while processing
         session_write_close();
 
-        if ($this->isProcessRunning())
+        if (!$this->batchRepository->tryGetLock())
         {
             // Background process already running.
             wp_die();
@@ -126,7 +131,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      */
     final protected function handle(): void
     {
-        $this->lockProcess();
+        $this->start_time = time(); // Set start time of current process.
 
         $items = $this->getBatch();
 
@@ -259,35 +264,6 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         }
 
         return false;
-    }
-
-
-    /**
-     * Lock process
-     *
-     * Lock the process so that multiple instances can't run simultaneously.
-     * Override if applicable, but the duration should be greater than that
-     * defined in the time_exceeded() method.
-     */
-    private function lockProcess(): void
-    {
-        $this->start_time = time(); // Set start time of current process.
-
-        $lock_duration = property_exists($this, 'queue_lock_time') ? $this->queue_lock_time : 60; // 1 minute
-        $lock_duration = apply_filters($this->identifier . '_queue_lock_time', $lock_duration);
-
-        set_site_transient($this->identifier . '_process_lock', microtime(), $lock_duration);
-    }
-
-
-    /**
-     * Unlock process
-     *
-     * Unlock the process so that other instances can spawn.
-     */
-    private function unlockProcess(): void
-    {
-        delete_site_transient($this->identifier . '_process_lock');
     }
 
 
