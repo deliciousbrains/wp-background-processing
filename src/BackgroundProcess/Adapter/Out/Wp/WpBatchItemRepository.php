@@ -105,6 +105,8 @@ final class WpBatchItemRepository implements QueueBatchRepository
 
     public function persist(): QueueBatchRepository
     {
+        delete_site_transient($this->batchPrefix . 'process_lock');
+
         return $this;
     }
 
@@ -121,8 +123,19 @@ final class WpBatchItemRepository implements QueueBatchRepository
         return $this->batchPrefix . $unique;
     }
 
+
     public function tryGetLock(): bool
     {
-        // TODO: Implement tryGetLock() method.
+        if (get_site_transient($this->batchPrefix) !== false)
+        {
+            return false;
+        }
+
+        $lock_duration = 60; // 1 minute
+        $lock_duration = apply_filters($this->batchPrefix . 'queue_lock_time', $lock_duration);
+
+        set_site_transient($this->batchPrefix . 'process_lock', microtime(), $lock_duration);
+
+        return true;
     }
 }
