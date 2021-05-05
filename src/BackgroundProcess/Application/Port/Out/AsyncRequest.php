@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Jetty\BackgroundProcessing\BackgroundProcess\Domain;
+namespace Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out;
 
 use Jetty\BackgroundProcessing\BackgroundProcess\Exception\AsyncException;
 

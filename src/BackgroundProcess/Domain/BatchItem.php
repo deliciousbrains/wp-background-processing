@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
+namespace Jetty\BackgroundProcessing\BackgroundProcess\Domain;
 
 /**
  * BatchItem implementation for WordPress meta tables.

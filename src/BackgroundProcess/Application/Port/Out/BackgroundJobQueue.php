@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Jetty\BackgroundProcessing\BackgroundProcess\Domain;
+namespace Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out;
 
 /**
  * Describes the minimum functionality needed for an async request.
