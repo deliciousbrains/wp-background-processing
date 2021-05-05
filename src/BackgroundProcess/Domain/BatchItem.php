@@ -1,23 +1,47 @@
 <?php
 declare(strict_types=1);
 
-namespace Jetty\BackgroundProcessing\BackgroundProcess\Domain;
+namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
 
 /**
- * A single batch item to be referenced in background processes.
+ * BatchItem implementation for WordPress meta tables.
  */
-interface BatchItem
+final class BatchItem
 {
     /**
-     * The key of the BatchItem.
+     * @var string
      */
-    public function key(): string;
+    private $key;
+
+    /**
+     * @var mixed
+     */
+    private $value;
+
+
+    public function __construct(string $key, $value)
+    {
+        $this->key   = $key;
+        $this->value = $value;
+    }
 
 
     /**
-     * The value of the BatchItem. This data will be processed by a background job queue.
+     * The key (meta) of the batch item.
+     */
+    public function key(): string
+    {
+        return $this->key;
+    }
+
+
+    /**
+     * The value of the item to be processed.
      *
      * @return mixed
      */
-    public function value();
+    public function value()
+    {
+        return $this->value;
+    }
 }
