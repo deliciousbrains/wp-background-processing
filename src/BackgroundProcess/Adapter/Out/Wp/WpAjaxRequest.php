@@ -58,21 +58,9 @@ final class WpAjaxRequest implements AsyncRequest
     /**
      * Get query URL
      */
-    private function generateQueryUrl(): string
+    protected function generateQueryUrl(): string
     {
-        if (property_exists($this, 'query_url'))
-        {
-            return $this->query_url;
-        }
-
-        $url = admin_url('admin-ajax.php');
-
-        /**
-         * Filters the post arguments used during an async request.
-         *
-         * @param string $url
-         */
-        return apply_filters($this->actionName . '_query_url', $url);
+        return admin_url('admin-ajax.php');
     }
 
 
