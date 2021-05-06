@@ -46,24 +46,12 @@ final class WpAjaxRequest implements AsyncRequest
      *
      * @return array
      */
-    private function generateQueryArguments(): array
+    protected function generateQueryArguments(): array
     {
-        if (property_exists($this, 'query_args'))
-        {
-            return $this->query_args;
-        }
-
-        $args = [
+        return [
             'action' => $this->actionName,
             'nonce'  => wp_create_nonce($this->actionName),
         ];
-
-        /**
-         * Filters the post arguments used during an async request.
-         *
-         * @param array $url
-         */
-        return apply_filters($this->actionName . '_query_args', $args);
     }
 
 
