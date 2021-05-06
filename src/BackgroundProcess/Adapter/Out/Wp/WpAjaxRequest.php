@@ -5,6 +5,7 @@ namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
 
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\AsyncRequest;
 use Jetty\BackgroundProcessing\BackgroundProcess\Exception\AsyncException;
+use WP_Error;
 
 /**
  * Defines an AJAX request in WordPress.
