@@ -73,24 +73,12 @@ final class WpAjaxRequest implements AsyncRequest
      */
     private function generatePostArguments(array $data = []): array
     {
-        if (property_exists($this, 'post_args'))
-        {
-            return $this->post_args;
-        }
-
-        $args = [
+        return [
             'timeout'   => 0.01,
             'blocking'  => false,
             'body'      => $data,
             'cookies'   => $_COOKIE,
             'sslverify' => apply_filters('https_local_ssl_verify', false),
         ];
-
-        /**
-         * Filters the post arguments used during an async request.
-         *
-         * @param array $args
-         */
-        return apply_filters($this->actionName . '_post_args', $args);
     }
 }
