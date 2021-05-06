@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
 
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\AsyncRequest;
-use Jetty\BackgroundProcessing\BackgroundProcess\Exception\AsyncException;
+use Jetty\BackgroundProcessing\BackgroundProcess\Exception\BackgroundException;
 use WP_Error;
 
 /**
@@ -33,7 +33,7 @@ final class WpAjaxRequest implements AsyncRequest
 
         if ($value instanceof WP_Error)
         {
-            throw new AsyncException(
+            throw new BackgroundException(
                 $value->get_error_message()
             );
         }
