@@ -5,6 +5,7 @@ namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
 
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\QueueBatchRepository;
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\BackgroundJobQueue;
+use Jetty\BackgroundProcessing\BackgroundProcess\Exception\RepositoryException;
 
 /**
  * Defines a background job queue that operates on multiple pieces in the
@@ -57,7 +58,15 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
     final public function pushToQueue(array $data): BackgroundJobQueue
     {
-        $this->batchRepository->createBatchItem($data);
+        try
+        {
+            $this->batchRepository->createBatchItem($data);
+        }
+        catch (RepositoryException $exception)
+        {
+            error_log('Could not push item to background job queue.');
+            error_log($exception->getMessage());
+        }
 
         return $this;
     }
@@ -65,7 +74,15 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
     final public function save(): BackgroundJobQueue
     {
-        $this->batchRepository->persist();
+        try
+        {
+            $this->batchRepository->persist();
+        }
+        catch (RepositoryException $exception)
+        {
+            error_log('Could not save background job queue.');
+            error_log($exception->getMessage());
+        }
 
         return $this;
     }
@@ -73,16 +90,24 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
     final public function cancel(): void
     {
-        if (!$this->isQueueEmpty())
+        try
         {
-            $batch = $this->getBatch();
-
-            foreach ($batch as $item)
+            if (!$this->isQueueEmpty())
             {
-                $this->batchRepository->deleteBatchItem($item);
-            }
+                $batch = $this->batchRepository->readBatchItems();
 
-            wp_clear_scheduled_hook($this->cron_hook_identifier);
+                foreach ($batch as $item)
+                {
+                    $this->batchRepository->deleteBatchItem($item);
+                }
+
+                wp_clear_scheduled_hook($this->cron_hook_identifier);
+            }
+        }
+        catch (RepositoryException $exception)
+        {
+            error_log('An error occurred while trying to cancel a background process.');
+            error_log($exception->getMessage());
         }
     }
 
@@ -126,42 +151,45 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      */
     final protected function handle(): void
     {
-        $this->lockProcess();
+        try {
+            $this->lockProcess();
 
-        $items = $this->getBatch();
+            $items = $this->batchRepository->readBatchItems();
 
-        $currentItem = 0;
+            $currentItem = 0;
 
-        while (!$this->timeExceeded() && !$this->memoryExceeded() && count($items) > $currentItem)
-        {
-            $item = $items[$currentItem];
+            while (!$this->timeExceeded() && !$this->memoryExceeded() && count($items) > $currentItem) {
+                $item = $items[$currentItem];
 
-            $this->handleTask($item->value());
+                $this->handleTask($item->value());
 
-            $this->batchRepository->deleteBatchItem($item);
+                $this->batchRepository->deleteBatchItem($item);
 
-            if ($this->timeExceeded() || $this->memoryExceeded())
-            {
-                // Batch limits reached.
-                break;
+                if ($this->timeExceeded() || $this->memoryExceeded()) {
+                    // Batch limits reached.
+                    break;
+                }
+
+                $currentItem++;
             }
 
-            $currentItem++;
+            $this->batchRepository->persist();
+
+            // Start next batch or complete process.
+            if (!$this->isQueueEmpty()) {
+                $this->dispatch();
+            } else {
+                $this->complete();
+            }
         }
-
-        $this->batchRepository->persist();
-
-        // Start next batch or complete process.
-        if (!$this->isQueueEmpty())
+        catch (RepositoryException $exception)
         {
-            $this->dispatch();
-        }
-        else
-        {
-            $this->complete();
-        }
 
-        wp_die();
+        }
+        finally
+        {
+            wp_die();
+        }
     }
 
 
@@ -240,7 +268,16 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      */
     private function isQueueEmpty(): bool
     {
-        return $this->batchRepository->batchItemsExist();
+        try {
+            return $this->batchRepository->batchItemsExist();
+        }
+        catch (RepositoryException $exception)
+        {
+            error_log('Could not determine if background job queue has any items.');
+            error_log($exception->getMessage());
+        }
+
+        return true;
     }
 
 
@@ -288,15 +325,6 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     private function unlockProcess(): void
     {
         delete_site_transient($this->identifier . '_process_lock');
-    }
-
-
-    /**
-     * Get batch
-     */
-    private function getBatch(): array
-    {
-        return $this->batchRepository->readBatchItems();
     }
 
 
