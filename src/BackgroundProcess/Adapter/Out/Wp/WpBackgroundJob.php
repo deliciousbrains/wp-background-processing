@@ -24,7 +24,7 @@ abstract class WpBackgroundJob extends WpAjaxHandler implements BackgroundJob
     public function __construct(string $actionName)
     {
         $this->actionName = $actionName;
-        $this->jobData = [];
+        $this->jobData    = [];
 
         parent::__construct($actionName);
     }

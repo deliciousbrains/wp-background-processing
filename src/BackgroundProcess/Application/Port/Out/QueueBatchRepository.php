@@ -34,7 +34,7 @@ interface QueueBatchRepository
      *
      * @throws RepositoryException
      *
-     * @return BatchItem[]
+     * @return array<BatchItem>
      */
     public function readBatchItems(): array;
 

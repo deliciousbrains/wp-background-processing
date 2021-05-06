@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
 
-use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\QueueBatchRepository;
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\BackgroundJobQueue;
+use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\QueueBatchRepository;
 use Jetty\BackgroundProcessing\BackgroundProcess\Exception\RepositoryException;
 
 /**
@@ -151,21 +151,24 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      */
     final protected function handle(): void
     {
-        try {
+        try
+        {
             $this->lockProcess();
 
             $items = $this->batchRepository->readBatchItems();
 
             $currentItem = 0;
 
-            while (!$this->timeExceeded() && !$this->memoryExceeded() && count($items) > $currentItem) {
+            while (!$this->timeExceeded() && !$this->memoryExceeded() && count($items) > $currentItem)
+            {
                 $item = $items[$currentItem];
 
                 $this->handleTask($item->value());
 
                 $this->batchRepository->deleteBatchItem($item);
 
-                if ($this->timeExceeded() || $this->memoryExceeded()) {
+                if ($this->timeExceeded() || $this->memoryExceeded())
+                {
                     // Batch limits reached.
                     break;
                 }
@@ -176,15 +179,17 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
             $this->batchRepository->persist();
 
             // Start next batch or complete process.
-            if (!$this->isQueueEmpty()) {
+            if (!$this->isQueueEmpty())
+            {
                 $this->dispatch();
-            } else {
+            }
+            else
+            {
                 $this->complete();
             }
         }
         catch (RepositoryException $exception)
         {
-
         }
         finally
         {
@@ -268,7 +273,8 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      */
     private function isQueueEmpty(): bool
     {
-        try {
+        try
+        {
             return $this->batchRepository->batchItemsExist();
         }
         catch (RepositoryException $exception)
