@@ -5,6 +5,7 @@ namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
 
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\BackgroundJobQueue;
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\QueueBatchRepository;
+use Jetty\BackgroundProcessing\BackgroundProcess\Exception\BackgroundException;
 use Jetty\BackgroundProcessing\BackgroundProcess\Exception\RepositoryException;
 
 /**
@@ -64,8 +65,11 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         }
         catch (RepositoryException $exception)
         {
-            error_log('Could not push item to background job queue.');
-            error_log($exception->getMessage());
+            throw new BackgroundException(
+                'Could not push item to background job queue.',
+                0,
+                $exception
+            );
         }
 
         return $this;
@@ -80,8 +84,11 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         }
         catch (RepositoryException $exception)
         {
-            error_log('Could not save background job queue.');
-            error_log($exception->getMessage());
+            throw new BackgroundException(
+                'Could not save background job queue.',
+            0,
+            $exception
+            );
         }
 
         return $this;
@@ -106,8 +113,11 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         }
         catch (RepositoryException $exception)
         {
-            error_log('An error occurred while trying to cancel a background process.');
-            error_log($exception->getMessage());
+            throw new BackgroundException(
+                'An error occurred while trying to cancel a background process.',
+                0,
+                $exception
+            );
         }
     }
 
