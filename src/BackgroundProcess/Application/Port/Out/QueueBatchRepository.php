@@ -26,6 +26,8 @@ interface QueueBatchRepository
 
     /**
      * Reads and returns all available BatchItems.
+     *
+     * @return BatchItem[]
      */
     public function readBatchItems(): array;
 
