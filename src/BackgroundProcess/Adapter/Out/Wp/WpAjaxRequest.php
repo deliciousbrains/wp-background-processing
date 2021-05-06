@@ -46,7 +46,7 @@ final class WpAjaxRequest implements AsyncRequest
      *
      * @return array
      */
-    protected function generateQueryArguments(): array
+    private function generateQueryArguments(): array
     {
         return [
             'action' => $this->actionName,
@@ -58,7 +58,7 @@ final class WpAjaxRequest implements AsyncRequest
     /**
      * Get query URL
      */
-    protected function generateQueryUrl(): string
+    private function generateQueryUrl(): string
     {
         return admin_url('admin-ajax.php');
     }
