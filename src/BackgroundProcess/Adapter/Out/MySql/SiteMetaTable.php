@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\MySql;
 
-use Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp\WpBatchItem;
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\BatchTable;
 use Jetty\BackgroundProcessing\BackgroundProcess\Domain\BatchItem;
 use mysqli;
@@ -77,7 +76,7 @@ final class SiteMetaTable implements BatchTable
 
         foreach($results as $result)
         {
-            $batchItems[] = new WpBatchItem($result['meta_key'], maybe_unserialize($result['meta_value']));
+            $batchItems[] = new BatchItem($result['meta_key'], maybe_unserialize($result['meta_value']));
         }
 
         return $batchItems;

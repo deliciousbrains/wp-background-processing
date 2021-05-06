@@ -37,7 +37,7 @@ final class MySqlBatchItemRepository implements QueueBatchRepository
     {
         $key = $this->generateKey();
 
-        $item = new WpBatchItem($key, $value);
+        $item = new BatchItem($key, $value);
 
         $this->batchTable->insert($item);
 
