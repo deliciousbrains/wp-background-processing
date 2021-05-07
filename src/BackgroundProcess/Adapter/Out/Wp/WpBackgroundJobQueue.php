@@ -61,6 +61,8 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
     final public function dispatch(array $data = []): array
     {
+        $this->logger->debug('Starting background process.');
+
         // Schedule the cron healthcheck.
         $this->scheduleEvent();
 
@@ -75,6 +77,10 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         try
         {
             $this->batchRepository->createBatchItem($data);
+            $this->logger->debug(
+                'Item pushed to queue.',
+                ['data' => $data]
+            );
         }
         catch (RepositoryException $exception)
         {
@@ -148,12 +154,14 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
         if (!$this->batchRepository->tryGetLock())
         {
+            $this->logger->debug('Process is already running... Exiting.');
             // Background process already running.
             wp_die();
         }
 
         if ($this->isQueueEmpty())
         {
+            $this->logger->debug('Process has no data');
             // No data to process.
             wp_die();
         }
@@ -178,6 +186,10 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         try
         {
             $items = $this->batchRepository->readBatchItems();
+            $this->logger->debug(
+                'Processing batch items.',
+                ['items' => $items]
+            );
 
             $currentItem = 0;
 
@@ -200,13 +212,17 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
             $this->batchRepository->persist();
 
+            $this->logger->debug('Ending process.');
+
             // Start next batch or complete process.
             if (!$this->isQueueEmpty())
             {
+                $this->logger->debug('Queue is not empty, starting another process.');
                 $this->dispatch();
             }
             else
             {
+                $this->logger->debug('Queue is empty and we are done!');
                 $this->complete();
             }
         }
