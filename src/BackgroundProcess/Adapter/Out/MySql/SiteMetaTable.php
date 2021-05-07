@@ -116,6 +116,7 @@ final class SiteMetaTable implements BatchTable
         }
         catch (RepositoryException $repositoryException)
         {
+            error_log($repositoryException->getMessage());
             return false;
         }
 
