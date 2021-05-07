@@ -111,19 +111,6 @@ final class WpBatchItemRepository implements QueueBatchRepository
     }
 
 
-    /**
-     * Generates a unique key based on microtime. BatchItems are
-     * given a unique key to save to the database.
-     */
-    private function generateKey(): string
-    {
-        $length = 32;
-        $unique = md5(microtime() . rand());
-        $unique = substr($unique, 0, $length);
-        return $this->batchPrefix . $unique;
-    }
-
-
     public function tryGetLock(): bool
     {
         if (get_site_transient($this->batchPrefix) !== false)
@@ -137,5 +124,18 @@ final class WpBatchItemRepository implements QueueBatchRepository
         set_site_transient($this->batchPrefix . 'process_lock', microtime(), $lock_duration);
 
         return true;
+    }
+
+
+    /**
+     * Generates a unique key based on microtime. BatchItems are
+     * given a unique key to save to the database.
+     */
+    private function generateKey(): string
+    {
+        $length = 32;
+        $unique = md5(microtime() . rand());
+        $unique = substr($unique, 0, $length);
+        return $this->batchPrefix . $unique;
     }
 }

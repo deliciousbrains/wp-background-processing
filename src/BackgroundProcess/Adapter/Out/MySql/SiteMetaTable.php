@@ -32,14 +32,14 @@ final class SiteMetaTable implements BatchTable
 
     public function __construct(mysqli $mysqli, string $prefix, int $siteId, string $actionName)
     {
-        $this->mysqli = $mysqli;
-        $this->tableName = "${prefix}sitemeta";
-        $this->siteId = $siteId;
+        $this->mysqli      = $mysqli;
+        $this->tableName   = "${prefix}sitemeta";
+        $this->siteId      = $siteId;
         $this->batchPrefix = $this->batchPrefix = $actionName . '_batch_';
     }
 
 
-    public function insert(BatchItem $item)
+    public function insert(BatchItem $item): void
     {
         $data = serialize($item->value());
 
@@ -47,7 +47,7 @@ final class SiteMetaTable implements BatchTable
 
         $query = "
                 INSERT INTO {$this->tableName} (site_id, meta_key, meta_value)
-                VALUES ({$this->siteId}, '{$item->key()}', \"$data\");";
+                VALUES ({$this->siteId}, '{$item->key()}', \"${data}\");";
 
         $result = $this->mysqli->query($query);
 
@@ -74,7 +74,7 @@ final class SiteMetaTable implements BatchTable
 
         $batchItems = [];
 
-        foreach($results as $result)
+        foreach ($results as $result)
         {
             $batchItems[] = new BatchItem($result['meta_key'], maybe_unserialize($result['meta_value']));
         }
@@ -83,7 +83,7 @@ final class SiteMetaTable implements BatchTable
     }
 
 
-    public function delete(BatchItem $item)
+    public function delete(BatchItem $item): void
     {
         $query = "
             DELETE FROM {$this->tableName} WHERE meta_key='{$item->key()}'";
@@ -97,7 +97,7 @@ final class SiteMetaTable implements BatchTable
     }
 
 
-    public function persist()
+    public function persist(): void
     {
         $result = $this->mysqli->commit();
         if ($result === false)

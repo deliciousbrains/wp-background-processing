@@ -25,12 +25,12 @@ final class MySqlBatchItemRepository implements QueueBatchRepository
     public function __construct(BatchTable $table, string $actionName)
     {
         $this->batchPrefix = $actionName . '_batch_';
-        $this->batchTable = $table;
+        $this->batchTable  = $table;
     }
 
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function createBatchItem($value): QueueBatchRepository
     {
@@ -44,9 +44,6 @@ final class MySqlBatchItemRepository implements QueueBatchRepository
     }
 
 
-    /**
-     * @inheritDoc
-     */
     public function batchItemsExist(): bool
     {
         return $this->batchTable->hasItems();
@@ -54,7 +51,7 @@ final class MySqlBatchItemRepository implements QueueBatchRepository
 
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function readBatchItems(): array
     {
@@ -62,9 +59,6 @@ final class MySqlBatchItemRepository implements QueueBatchRepository
     }
 
 
-    /**
-     * @inheritDoc
-     */
     public function deleteBatchItem(BatchItem $item): QueueBatchRepository
     {
         $this->batchTable->delete($item);
@@ -73,14 +67,17 @@ final class MySqlBatchItemRepository implements QueueBatchRepository
     }
 
 
-    /**
-     * @inheritDoc
-     */
     public function persist(): QueueBatchRepository
     {
         $this->batchTable->persist();
 
         return $this;
+    }
+
+
+    public function tryGetLock(): bool
+    {
+        return $this->batchTable->tryGetLock();
     }
 
 
@@ -94,11 +91,5 @@ final class MySqlBatchItemRepository implements QueueBatchRepository
         $unique = md5(microtime() . rand());
         $unique = substr($unique, 0, $length);
         return $this->batchPrefix . $unique;
-    }
-
-
-    public function tryGetLock(): bool
-    {
-        return $this->batchTable->tryGetLock();
     }
 }
