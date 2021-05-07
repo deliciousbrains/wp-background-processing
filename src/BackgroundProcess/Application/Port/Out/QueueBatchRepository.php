@@ -50,6 +50,13 @@ interface QueueBatchRepository
 
 
     /**
+     * Tries to get a lock on the items in the repository.
+     * Will return true if the lock is acquired and false if it is already locked.
+     */
+    public function tryGetLock(): bool;
+
+
+    /**
      * Persists any repository changes made in memory.
      *
      * @throws RepositoryException
