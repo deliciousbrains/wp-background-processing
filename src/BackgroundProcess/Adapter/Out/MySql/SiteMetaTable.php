@@ -31,12 +31,18 @@ final class SiteMetaTable implements BatchTable
      */
     private $batchPrefix;
 
+    /**
+     * @var string
+     */
+    private $lockMetaKey;
+
     public function __construct(mysqli $mysqli, string $prefix, int $siteId, string $actionName)
     {
         $this->mysqli      = $mysqli;
         $this->tableName   = "${prefix}sitemeta";
         $this->siteId      = $siteId;
         $this->batchPrefix = $actionName . '_batch_';
+        $this->lockMetaKey = "{$actionName}_lock";
     }
 
 
@@ -126,7 +132,7 @@ final class SiteMetaTable implements BatchTable
 
         $query = "
             SELECT * FROM {$this->tableName}
-            WHERE meta_key = '{$this->getLockMetaKey()}'
+            WHERE meta_key = '{$this->lockMetaKey}'
             FOR UPDATE";
 
         $result = $this->mysqli->query($query);
@@ -148,13 +154,12 @@ final class SiteMetaTable implements BatchTable
      */
     private function tryCreateLockRow(): void
     {
-        $lockMetaKey = $this->getLockMetaKey();
         $query = "
             INSERT INTO wp_sitemeta(site_id, meta_key, meta_value) 
-            SELECT 1, '{$lockMetaKey}', false FROM DUAL
+            SELECT 1, '{$this->lockMetaKey}', false FROM DUAL
             WHERE NOT EXISTS (
                 SELECT * FROM wp_sitemeta
-                WHERE meta_key = '{$lockMetaKey}'
+                WHERE meta_key = '{$this->lockMetaKey}'
             );
         ";
         $result = $this->mysqli->query($query);
@@ -164,14 +169,5 @@ final class SiteMetaTable implements BatchTable
                 'There was an issue creating the process locking row.'
             );
         }
-    }
-
-
-    /**
-     * Retrieves the meta_key for locking
-     */
-    private function getLockMetaKey(): string
-    {
-        return "{$this->batchPrefix}lock";
     }
 }
