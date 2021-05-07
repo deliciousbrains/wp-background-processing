@@ -36,7 +36,7 @@ final class SiteMetaTable implements BatchTable
         $this->mysqli      = $mysqli;
         $this->tableName   = "${prefix}sitemeta";
         $this->siteId      = $siteId;
-        $this->batchPrefix = $this->batchPrefix = $actionName . '_batch_';
+        $this->batchPrefix = $actionName . '_batch_';
     }
 
 
