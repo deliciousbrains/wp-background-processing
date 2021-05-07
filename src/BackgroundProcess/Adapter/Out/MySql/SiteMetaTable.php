@@ -5,6 +5,7 @@ namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\MySql;
 
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\BatchTable;
 use Jetty\BackgroundProcessing\BackgroundProcess\Domain\BatchItem;
+use Jetty\BackgroundProcessing\BackgroundProcess\Exception\RepositoryException;
 use mysqli;
 use mysqli_sql_exception;
 
@@ -109,6 +110,15 @@ final class SiteMetaTable implements BatchTable
 
     public function tryGetLock(): bool
     {
+        try
+        {
+            $this->tryCreateLockRow();
+        }
+        catch (RepositoryException $repositoryException)
+        {
+            return false;
+        }
+
         $this->mysqli->query('SET SESSION innodb_lock_wait_timeout = 2');
 
         $this->mysqli->begin_transaction();
@@ -127,6 +137,32 @@ final class SiteMetaTable implements BatchTable
     public function hasItems(): bool
     {
         return count($this->readAll()) > 0;
+    }
+
+
+    /**
+     * Attempt to create a single row for the process so that a lock can be created
+     *
+     * @throws RepositoryException If there was an error connecting to the DB to create the row
+     */
+    private function tryCreateLockRow(): void
+    {
+        $lockMetaKey = $this->getLockMetaKey();
+        $query = "
+            INSERT INTO wp_sitemeta(site_id, meta_key, meta_value) 
+            SELECT 1, '{$lockMetaKey}', false FROM DUAL
+            WHERE NOT EXISTS (
+                SELECT * FROM wp_sitemeta
+                WHERE meta_key = '{$lockMetaKey}'
+            );
+        ";
+        $result = $this->mysqli->query($query);
+        if (false === $result)
+        {
+            throw new RepositoryException(
+                'There was an issue creating the process locking row.'
+            );
+        }
     }
 
 
