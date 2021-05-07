@@ -167,7 +167,8 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     final protected function handle(): void
     {
         $this->start_time = time(); // Set start time of current process.
-
+        try
+        {
             $items = $this->batchRepository->readBatchItems();
 
             $currentItem = 0;
