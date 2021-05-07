@@ -312,15 +312,6 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
 
     /**
-     * Get batch
-     */
-    private function getBatch(): array
-    {
-        return $this->batchRepository->readBatchItems();
-    }
-
-
-    /**
      * Memory exceeded
      *
      * Ensures the batch process never exceeds 90%
