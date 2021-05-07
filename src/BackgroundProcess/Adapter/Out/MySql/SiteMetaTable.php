@@ -115,7 +115,7 @@ final class SiteMetaTable implements BatchTable
 
         $query = "
             SELECT * FROM {$this->tableName}
-            WHERE meta_key = '{$this->batchPrefix}lock'
+            WHERE meta_key = '{$this->getLockMetaKey()}'
             FOR UPDATE";
 
         $result = $this->mysqli->query($query);
@@ -127,5 +127,14 @@ final class SiteMetaTable implements BatchTable
     public function hasItems(): bool
     {
         return count($this->readAll()) > 0;
+    }
+
+
+    /**
+     * Retrieves the meta_key for locking
+     */
+    private function getLockMetaKey(): string
+    {
+        return "{$this->batchPrefix}lock";
     }
 }
