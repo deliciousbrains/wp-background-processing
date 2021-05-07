@@ -8,6 +8,7 @@ use Jetty\BackgroundProcessing\BackgroundProcess\Domain\BatchItem;
 use Jetty\BackgroundProcessing\BackgroundProcess\Exception\RepositoryException;
 use mysqli;
 use mysqli_sql_exception;
+use Psr\Log\LoggerInterface;
 
 final class SiteMetaTable implements BatchTable
 {
@@ -36,8 +37,14 @@ final class SiteMetaTable implements BatchTable
      */
     private $lockMetaKey;
 
-    public function __construct(mysqli $mysqli, string $prefix, int $siteId, string $actionName)
+    /**
+     * @var LoggerInterface Logs messages
+     */
+    private $logger;
+
+    public function __construct(LoggerInterface $logger, mysqli $mysqli, string $prefix, int $siteId, string $actionName)
     {
+        $this->logger      = $logger;
         $this->mysqli      = $mysqli;
         $this->tableName   = "${prefix}sitemeta";
         $this->siteId      = $siteId;
@@ -122,7 +129,12 @@ final class SiteMetaTable implements BatchTable
         }
         catch (RepositoryException $repositoryException)
         {
-            error_log($repositoryException->getMessage());
+            $this->logger->critical(
+                'Could not create the row for locking background processes.',
+                [
+                    'exception' => $repositoryException
+                ]
+            );
             return false;
         }
 
