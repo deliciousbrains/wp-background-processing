@@ -7,6 +7,7 @@ use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\Background
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\QueueBatchRepository;
 use Jetty\BackgroundProcessing\BackgroundProcess\Exception\BackgroundException;
 use Jetty\BackgroundProcessing\BackgroundProcess\Exception\RepositoryException;
+use Psr\Log\LoggerInterface;
 
 /**
  * Defines a background job queue that operates on multiple pieces in the
@@ -18,6 +19,11 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      * @var string
      */
     private $identifier;
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
 
     /**
      * @var QueueBatchRepository
@@ -32,10 +38,12 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     /**
      * Initiate new background process
      */
-    public function __construct(QueueBatchRepository $batchRepository, string $actionName)
+    public function __construct(string $actionName, QueueBatchRepository $batchRepository, LoggerInterface $logger)
     {
         $this->identifier = $actionName;
         parent::__construct($actionName);
+
+        $this->logger = $logger;
 
         $this->cron_hook_identifier     = $this->identifier . '_cron';
         $this->cron_interval_identifier = $this->identifier . '_cron_interval';
@@ -53,6 +61,8 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
     final public function dispatch(array $data = []): array
     {
+        $this->logger->debug('Starting background process.');
+
         // Schedule the cron healthcheck.
         $this->scheduleEvent();
 
@@ -67,6 +77,10 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         try
         {
             $this->batchRepository->createBatchItem($data);
+            $this->logger->debug(
+                'Item pushed to queue.',
+                ['data' => $data]
+            );
         }
         catch (RepositoryException $exception)
         {
@@ -140,12 +154,14 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
         if (!$this->batchRepository->tryGetLock())
         {
+            $this->logger->debug('Process is already running... Exiting.');
             // Background process already running.
             wp_die();
         }
 
         if ($this->isQueueEmpty())
         {
+            $this->logger->debug('Process has no data');
             // No data to process.
             wp_die();
         }
@@ -170,6 +186,10 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         try
         {
             $items = $this->batchRepository->readBatchItems();
+            $this->logger->debug(
+                'Processing batch items.',
+                ['items' => $items]
+            );
 
             $currentItem = 0;
 
@@ -192,20 +212,26 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
 
             $this->batchRepository->persist();
 
+            $this->logger->debug('Ending process.');
+
             // Start next batch or complete process.
             if (!$this->isQueueEmpty())
             {
+                $this->logger->debug('Queue is not empty, starting another process.');
                 $this->dispatch();
             }
             else
             {
+                $this->logger->debug('Queue is empty and we are done!');
                 $this->complete();
             }
         }
         catch (RepositoryException $exception)
         {
-            error_log('Could not process queue.');
-            error_log($exception->getMessage());
+            $this->logger->critical(
+                'Could not process queue.',
+                ['exception' => $exception]
+            );
         }
         finally
         {
@@ -289,7 +315,19 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
      */
     private function isQueueEmpty(): bool
     {
-        return !$this->batchRepository->batchItemsExist();
+        try
+        {
+            return $this->batchRepository->batchItemsExist();
+        }
+        catch (RepositoryException $exception)
+        {
+            $this->logger->critical(
+                'Could not determine if background job queue has any items.',
+                ['exception' => $exception]
+            );
+        }
+
+        return true;
     }
 
 

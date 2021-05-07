@@ -3,7 +3,8 @@
   "description": "WP Background Processing can be used to fire off non-blocking asynchronous requests or as a background processing tool, allowing you to queue tasks.",
   "type": "library",
   "require": {
-    "php": ">=7.1"
+    "php": ">=7.1",
+    "psr/log": "^1.1"
   },
   "license": "GPL-2.0-or-later",
   "authors": [
