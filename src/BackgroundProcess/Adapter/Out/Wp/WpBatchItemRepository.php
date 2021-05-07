@@ -89,7 +89,7 @@ final class WpBatchItemRepository implements QueueBatchRepository
 
         foreach ($rawResults as $result)
         {
-            $batchItems[] = new WpBatchItem($result[$column], maybe_unserialize($result[$value_column]));
+            $batchItems[] = new BatchItem($result[$column], maybe_unserialize($result[$value_column]));
         }
 
         return $batchItems;
