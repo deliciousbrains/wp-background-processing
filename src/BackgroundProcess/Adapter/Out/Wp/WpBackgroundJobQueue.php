@@ -208,8 +208,10 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         }
         catch (RepositoryException $exception)
         {
-            error_log('Could not process queue.');
-            error_log($exception->getMessage());
+            $this->logger->critical(
+                'Could not process queue.',
+                ['exception' => $exception]
+            );
         }
         finally
         {
