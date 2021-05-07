@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out;
 
-use Jetty\BackgroundProcessing\BackgroundProcess\Exception\AsyncException;
+use Jetty\BackgroundProcessing\BackgroundProcess\Exception\BackgroundException;
 
 /**
  * Describes the minimum functionality needed for an async request.
@@ -15,7 +15,7 @@ interface AsyncRequest
      *
      * @return array<string, string>
      *
-     * @throws AsyncException
+     * @throws BackgroundException
      */
     public function dispatch(array $data = []): array;
 }

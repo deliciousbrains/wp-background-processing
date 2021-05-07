@@ -4,7 +4,8 @@ declare(strict_types=1);
 namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
 
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\AsyncRequest;
-use Jetty\BackgroundProcessing\BackgroundProcess\Exception\AsyncException;
+use Jetty\BackgroundProcessing\BackgroundProcess\Exception\BackgroundException;
+use WP_Error;
 
 /**
  * Defines an AJAX request in WordPress.
@@ -32,7 +33,7 @@ final class WpAjaxRequest implements AsyncRequest
 
         if ($value instanceof WP_Error)
         {
-            throw new AsyncException(
+            throw new BackgroundException(
                 $value->get_error_message()
             );
         }
@@ -48,22 +49,10 @@ final class WpAjaxRequest implements AsyncRequest
      */
     private function generateQueryArguments(): array
     {
-        if (property_exists($this, 'query_args'))
-        {
-            return $this->query_args;
-        }
-
-        $args = [
+        return [
             'action' => $this->actionName,
             'nonce'  => wp_create_nonce($this->actionName),
         ];
-
-        /**
-         * Filters the post arguments used during an async request.
-         *
-         * @param array $url
-         */
-        return apply_filters($this->actionName . '_query_args', $args);
     }
 
 
@@ -72,19 +61,7 @@ final class WpAjaxRequest implements AsyncRequest
      */
     private function generateQueryUrl(): string
     {
-        if (property_exists($this, 'query_url'))
-        {
-            return $this->query_url;
-        }
-
-        $url = admin_url('admin-ajax.php');
-
-        /**
-         * Filters the post arguments used during an async request.
-         *
-         * @param string $url
-         */
-        return apply_filters($this->actionName . '_query_url', $url);
+        return admin_url('admin-ajax.php');
     }
 
 
@@ -97,24 +74,12 @@ final class WpAjaxRequest implements AsyncRequest
      */
     private function generatePostArguments(array $data = []): array
     {
-        if (property_exists($this, 'post_args'))
-        {
-            return $this->post_args;
-        }
-
-        $args = [
+        return [
             'timeout'   => 0.01,
             'blocking'  => false,
             'body'      => $data,
             'cookies'   => $_COOKIE,
             'sslverify' => apply_filters('https_local_ssl_verify', false),
         ];
-
-        /**
-         * Filters the post arguments used during an async request.
-         *
-         * @param array $args
-         */
-        return apply_filters($this->actionName . '_post_args', $args);
     }
 }

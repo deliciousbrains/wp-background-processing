@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\MySql;
 
-use Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp\WpBatchItem;
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\BatchTable;
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\QueueBatchRepository;
 use Jetty\BackgroundProcessing\BackgroundProcess\Domain\BatchItem;
