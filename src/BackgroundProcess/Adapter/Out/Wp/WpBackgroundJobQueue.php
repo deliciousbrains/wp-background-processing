@@ -317,7 +317,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     {
         try
         {
-            return $this->batchRepository->batchItemsExist();
+            return !$this->batchRepository->batchItemsExist();
         }
         catch (RepositoryException $exception)
         {
