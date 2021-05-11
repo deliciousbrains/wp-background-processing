@@ -49,7 +49,7 @@ final class SiteMetaTable implements BatchTable
         $this->tableName   = "${prefix}sitemeta";
         $this->siteId      = $siteId;
         $this->batchPrefix = $actionName . '_batch_';
-        $this->lockMetaKey = "{$actionName}_lock";
+        $this->lockMetaKey = "lock_{$actionName}";
     }
 
 
@@ -123,6 +123,8 @@ final class SiteMetaTable implements BatchTable
 
     public function tryGetLock(): bool
     {
+        $this->mysqli->query('SET SESSION innodb_lock_wait_timeout = 2');
+
         try
         {
             $this->tryCreateLockRow();
@@ -137,8 +139,6 @@ final class SiteMetaTable implements BatchTable
             );
             return false;
         }
-
-        $this->mysqli->query('SET SESSION innodb_lock_wait_timeout = 2');
 
         $this->mysqli->begin_transaction();
 
@@ -177,6 +177,11 @@ final class SiteMetaTable implements BatchTable
         $result = $this->mysqli->query($query);
         if (false === $result)
         {
+            // The lock already exists, we just timed out
+            if ($this->mysqli->errno === 1205)
+            {
+                return;
+            }
             throw new RepositoryException(
                 'There was an issue creating the process locking row.'
             );
