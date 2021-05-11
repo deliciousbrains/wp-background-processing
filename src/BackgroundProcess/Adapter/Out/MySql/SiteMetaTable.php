@@ -49,7 +49,7 @@ final class SiteMetaTable implements BatchTable
         $this->tableName   = "${prefix}sitemeta";
         $this->siteId      = $siteId;
         $this->batchPrefix = $actionName . '_batch_';
-        $this->lockMetaKey = "{$actionName}_lock";
+        $this->lockMetaKey = "lock_{$actionName}";
     }
 
 
