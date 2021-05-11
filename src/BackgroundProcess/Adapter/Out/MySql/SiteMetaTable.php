@@ -123,6 +123,8 @@ final class SiteMetaTable implements BatchTable
 
     public function tryGetLock(): bool
     {
+        $this->mysqli->query('SET SESSION innodb_lock_wait_timeout = 2');
+
         try
         {
             $this->tryCreateLockRow();
@@ -137,8 +139,6 @@ final class SiteMetaTable implements BatchTable
             );
             return false;
         }
-
-        $this->mysqli->query('SET SESSION innodb_lock_wait_timeout = 2');
 
         $this->mysqli->begin_transaction();
 
