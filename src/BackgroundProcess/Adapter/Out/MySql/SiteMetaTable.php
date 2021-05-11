@@ -177,6 +177,11 @@ final class SiteMetaTable implements BatchTable
         $result = $this->mysqli->query($query);
         if (false === $result)
         {
+            // The lock already exists, we just timed out
+            if ($this->mysqli->errno === 1205)
+            {
+                return;
+            }
             throw new RepositoryException(
                 'There was an issue creating the process locking row.'
             );
