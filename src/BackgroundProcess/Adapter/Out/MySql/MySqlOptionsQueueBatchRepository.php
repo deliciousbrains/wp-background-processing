@@ -20,7 +20,7 @@ final class MySqlOptionsQueueBatchRepository implements QueueBatchRepository
     /** @var BatchTable The table (to be removed) to lock and queue data in */
     private $batchTable;
 
-    /** @var string The meta key for locking  */
+    /** @var string The meta key for locking */
     private $lockMetaKey;
 
     /** @var LoggerInterface Implement to log errors */
