@@ -13,34 +13,48 @@ use Psr\Log\LoggerInterface;
  */
 final class MySqlBatchItemRepository implements QueueBatchRepository
 {
-    /**
-     * @var BatchTable
-     */
+
+    /** @var string The queued data prefix */
+    private $batchPrefix;
+
+    /** @var BatchTable The table (to be removed) to lock and queue data in */
     private $batchTable;
 
-    /**
-     * @var string
-     */
-    private $batchPrefix;
+    /** @var string The meta key for locking  */
+    private $lockMetaKey;
+
+    /** @var LoggerInterface Implement to log errors */
+    private $logger;
+
+    /** @var \mysqli Connection for MySQL database */
+    private $mysqli;
+
+    /** @var string The table name */
+    private $tableName;
+
 
     /**
      * MySqlBatchItemRepository constructor.
      *
      * @param LoggerInterface $logger Implementation to log errors
      * @param \mysqli $mysqli Connection for MySQL database
-     * @param string $dbPrefix The MySQL database prefix
+     * @param string $tablePrefix The database prefix
      * @param BatchTable $table The BatchTable instance
      * @param string $actionName The background job definition name
      */
     public function __construct(
         LoggerInterface $logger,
         \mysqli $mysqli,
-        string $dbPrefix,
+        string $tablePrefix,
         BatchTable $table,
         string $actionName
     ) {
         $this->batchPrefix = $actionName . '_batch_';
         $this->batchTable  = $table;
+        $this->lockMetaKey = "lock_{$actionName}";
+        $this->logger      = $logger;
+        $this->mysqli      = $mysqli;
+        $this->tableName   = "${tablePrefix}options";
     }
 
 
