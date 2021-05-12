@@ -10,7 +10,7 @@ use mysqli;
 use mysqli_sql_exception;
 use Psr\Log\LoggerInterface;
 
-final class SiteMetaTable implements BatchTable
+final class OptionsTable implements BatchTable
 {
     /**
      * @var mysqli
@@ -21,11 +21,6 @@ final class SiteMetaTable implements BatchTable
      * @var string
      */
     private $tableName;
-
-    /**
-     * @var int
-     */
-    private $siteId;
 
     /**
      * @var string
@@ -42,12 +37,11 @@ final class SiteMetaTable implements BatchTable
      */
     private $logger;
 
-    public function __construct(LoggerInterface $logger, mysqli $mysqli, string $prefix, int $siteId, string $actionName)
+    public function __construct(LoggerInterface $logger, mysqli $mysqli, string $prefix, string $actionName)
     {
         $this->logger      = $logger;
         $this->mysqli      = $mysqli;
-        $this->tableName   = "${prefix}sitemeta";
-        $this->siteId      = $siteId;
+        $this->tableName   = "${prefix}options";
         $this->batchPrefix = $actionName . '_batch_';
         $this->lockMetaKey = "lock_{$actionName}";
     }
@@ -60,8 +54,8 @@ final class SiteMetaTable implements BatchTable
         $data = $this->mysqli->escape_string($data);
 
         $query = "
-                INSERT INTO {$this->tableName} (site_id, meta_key, meta_value)
-                VALUES ({$this->siteId}, '{$item->key()}', \"${data}\");";
+                INSERT INTO {$this->tableName} (option_name, option_value, autoload)
+                VALUES ('{$item->key()}', \"${data}\", 'no');";
 
         $result = $this->mysqli->query($query);
 
@@ -77,8 +71,8 @@ final class SiteMetaTable implements BatchTable
         $query = "
 			SELECT *
 			FROM {$this->tableName}
-			WHERE meta_key LIKE '{$this->batchPrefix}%'
-			ORDER BY meta_key ASC";
+			WHERE option_name LIKE '{$this->batchPrefix}%'
+			ORDER BY option_name ASC";
 
         $results = $this->mysqli->query($query);
         if ($results === false)
@@ -90,7 +84,7 @@ final class SiteMetaTable implements BatchTable
 
         foreach ($results as $result)
         {
-            $batchItems[] = new BatchItem($result['meta_key'], maybe_unserialize($result['meta_value']));
+            $batchItems[] = new BatchItem($result['option_name'], maybe_unserialize($result['option_value']));
         }
 
         return $batchItems;
@@ -100,7 +94,7 @@ final class SiteMetaTable implements BatchTable
     public function delete(BatchItem $item): void
     {
         $query = "
-            DELETE FROM {$this->tableName} WHERE meta_key='{$item->key()}'";
+            DELETE FROM {$this->tableName} WHERE option_name='{$item->key()}'";
 
         $result = $this->mysqli->query($query);
 
@@ -144,7 +138,7 @@ final class SiteMetaTable implements BatchTable
 
         $query = "
             SELECT * FROM {$this->tableName}
-            WHERE meta_key = '{$this->lockMetaKey}'
+            WHERE option_name = '{$this->lockMetaKey}'
             FOR UPDATE";
 
         $result = $this->mysqli->query($query);
@@ -167,11 +161,11 @@ final class SiteMetaTable implements BatchTable
     private function tryCreateLockRow(): void
     {
         $query = "
-            INSERT INTO wp_sitemeta(site_id, meta_key, meta_value) 
-            SELECT 1, '{$this->lockMetaKey}', false FROM DUAL
+            INSERT INTO {$this->tableName}(option_name, option_value, autoload) 
+            SELECT '{$this->lockMetaKey}', false, 'no' FROM DUAL
             WHERE NOT EXISTS (
-                SELECT * FROM wp_sitemeta
-                WHERE meta_key = '{$this->lockMetaKey}'
+                SELECT * FROM {$this->tableName}
+                WHERE option_name = '{$this->lockMetaKey}'
             );
         ";
         $result = $this->mysqli->query($query);
