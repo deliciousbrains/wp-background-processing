@@ -6,6 +6,7 @@ namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\MySql;
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\BatchTable;
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\QueueBatchRepository;
 use Jetty\BackgroundProcessing\BackgroundProcess\Domain\BatchItem;
+use Jetty\BackgroundProcessing\BackgroundProcess\Exception\RepositoryException;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -63,11 +64,26 @@ final class MySqlOptionsQueueBatchRepository implements QueueBatchRepository
      */
     public function createBatchItem($value): QueueBatchRepository
     {
-        $key = $this->generateKey();
+        // Prepare key and value for insertion
+        $key  = $this->generateKey();
+        $data = $this->mysqli->escape_string(
+            serialize($value)
+        );
 
-        $item = new BatchItem($key, $value);
-
-        $this->batchTable->insert($item);
+        // Execute query
+        $query = "
+            INSERT INTO {$this->tableName} (option_name, option_value, autoload)
+            VALUES ('${key}', '${data}', 'no');
+        ";
+        $result = $this->mysqli->query($query);
+        if ($result === false)
+        {
+            throw new RepositoryException(
+                'Could not insert a background job item into the wp_options queue.',
+                0,
+                new mysqli_sql_exception($this->mysqli->error)
+            );
+        }
 
         return $this;
     }
