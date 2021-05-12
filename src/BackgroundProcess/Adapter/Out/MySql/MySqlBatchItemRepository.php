@@ -6,6 +6,7 @@ namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\MySql;
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\BatchTable;
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\QueueBatchRepository;
 use Jetty\BackgroundProcessing\BackgroundProcess\Domain\BatchItem;
+use Psr\Log\LoggerInterface;
 
 /**
  * Batch repository implemented using mysqli.
@@ -22,8 +23,22 @@ final class MySqlBatchItemRepository implements QueueBatchRepository
      */
     private $batchPrefix;
 
-    public function __construct(BatchTable $table, string $actionName)
-    {
+    /**
+     * MySqlBatchItemRepository constructor.
+     *
+     * @param LoggerInterface $logger Implementation to log errors
+     * @param \mysqli $mysqli Connection for MySQL database
+     * @param string $dbPrefix The MySQL database prefix
+     * @param BatchTable $table The BatchTable instance
+     * @param string $actionName The background job definition name
+     */
+    public function __construct(
+        LoggerInterface $logger,
+        \mysqli $mysqli,
+        string $dbPrefix,
+        BatchTable $table,
+        string $actionName
+    ) {
         $this->batchPrefix = $actionName . '_batch_';
         $this->batchTable  = $table;
     }
