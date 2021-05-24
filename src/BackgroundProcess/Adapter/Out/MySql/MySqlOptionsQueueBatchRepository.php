@@ -91,7 +91,7 @@ final class MySqlOptionsQueueBatchRepository implements QueueBatchRepository
 
     public function batchItemsExist(): bool
     {
-        return $this->batchTable->hasItems();
+        return count($this->readBatchItems()) > 0;
     }
 
 
