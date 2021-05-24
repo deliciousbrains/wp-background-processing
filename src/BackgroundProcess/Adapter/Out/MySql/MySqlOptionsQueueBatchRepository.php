@@ -100,7 +100,29 @@ final class MySqlOptionsQueueBatchRepository implements QueueBatchRepository
      */
     public function readBatchItems(): array
     {
-        return $this->batchTable->readAll();
+        $query = "
+			SELECT *
+			FROM {$this->tableName}
+			WHERE option_name LIKE '{$this->batchPrefix}%'
+			ORDER BY option_name ASC";
+
+        $results = $this->mysqli->query($query);
+        if ($results === false)
+        {
+            throw new RepositoryException(
+                'Cannot read batch items',
+                0,
+                new \mysqli_sql_exception($this->mysqli->error)
+            );
+        }
+
+        $batchItems = [];
+        foreach ($results as $result)
+        {
+            $batchItems[] = new BatchItem($result['option_name'], maybe_unserialize($result['option_value']));
+        }
+
+        return $batchItems;
     }
 
 
