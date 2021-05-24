@@ -81,7 +81,7 @@ final class MySqlOptionsQueueBatchRepository implements QueueBatchRepository
             throw new RepositoryException(
                 'Could not insert a background job item into the wp_options queue.',
                 0,
-                new mysqli_sql_exception($this->mysqli->error)
+                new \mysqli_sql_exception($this->mysqli->error)
             );
         }
 
