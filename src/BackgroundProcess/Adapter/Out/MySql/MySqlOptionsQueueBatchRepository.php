@@ -163,7 +163,63 @@ final class MySqlOptionsQueueBatchRepository implements QueueBatchRepository
 
     public function tryGetLock(): bool
     {
-        return $this->batchTable->tryGetLock();
+        $this->mysqli->query('SET SESSION innodb_lock_wait_timeout = 2');
+
+        try
+        {
+            $this->tryCreateLockRow();
+        }
+        catch (RepositoryException $repositoryException)
+        {
+            $this->logger->critical(
+                'Could not create the row for locking background processes.',
+                [
+                    'exception' => $repositoryException
+                ]
+            );
+            return false;
+        }
+
+        $this->mysqli->begin_transaction();
+
+        $query = "
+            SELECT * FROM {$this->tableName}
+            WHERE option_name = '{$this->lockMetaKey}'
+            FOR UPDATE";
+
+        $result = $this->mysqli->query($query);
+
+        return $result !== false;
+    }
+
+
+    /**
+     * Attempt to create a single row for the process so that a lock can be created
+     *
+     * @throws RepositoryException If there was an error connecting to the DB to create the row
+     */
+    private function tryCreateLockRow(): void
+    {
+        $query = "
+            INSERT INTO {$this->tableName}(option_name, option_value, autoload) 
+            SELECT '{$this->lockMetaKey}', false, 'no' FROM DUAL
+            WHERE NOT EXISTS (
+                SELECT * FROM {$this->tableName}
+                WHERE option_name = '{$this->lockMetaKey}'
+            );
+        ";
+        $result = $this->mysqli->query($query);
+        if (false === $result)
+        {
+            // The lock already exists, we just timed out
+            if ($this->mysqli->errno === 1205)
+            {
+                return;
+            }
+            throw new RepositoryException(
+                'There was an issue creating the process locking row.'
+            );
+        }
     }
 
 
