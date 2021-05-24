@@ -18,9 +18,6 @@ final class MySqlOptionsQueueBatchRepository implements QueueBatchRepository
     /** @var string The queued data prefix */
     private $batchPrefix;
 
-    /** @var BatchTable The table (to be removed) to lock and queue data in */
-    private $batchTable;
-
     /** @var string The meta key for locking */
     private $lockMetaKey;
 
@@ -40,18 +37,15 @@ final class MySqlOptionsQueueBatchRepository implements QueueBatchRepository
      * @param LoggerInterface $logger Implementation to log errors
      * @param \mysqli $mysqli Connection for MySQL database
      * @param string $tablePrefix The database prefix
-     * @param BatchTable $table The BatchTable instance
      * @param string $actionName The background job definition name
      */
     public function __construct(
         LoggerInterface $logger,
         \mysqli $mysqli,
         string $tablePrefix,
-        BatchTable $table,
         string $actionName
     ) {
         $this->batchPrefix = $actionName . '_batch_';
-        $this->batchTable  = $table;
         $this->lockMetaKey = "lock_{$actionName}";
         $this->logger      = $logger;
         $this->mysqli      = $mysqli;
