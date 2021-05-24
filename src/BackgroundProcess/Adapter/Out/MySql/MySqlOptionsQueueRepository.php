@@ -12,7 +12,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Batch repository implemented using mysqli.
  */
-final class MySqlOptionsQueueBatchRepository implements QueueBatchRepository
+final class MySqlOptionsQueueRepository implements QueueBatchRepository
 {
 
     /** @var string The queued data prefix */
