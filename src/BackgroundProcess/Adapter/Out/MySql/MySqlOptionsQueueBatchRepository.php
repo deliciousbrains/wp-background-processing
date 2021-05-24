@@ -147,7 +147,15 @@ final class MySqlOptionsQueueBatchRepository implements QueueBatchRepository
 
     public function persist(): QueueBatchRepository
     {
-        $this->batchTable->persist();
+        $result = $this->mysqli->commit();
+        if ($result === false)
+        {
+            throw new RepositoryException(
+                'Could not commit changes for the background process.',
+                0,
+                new \mysqli_sql_exception($this->mysqli->error)
+            );
+        }
 
         return $this;
     }
