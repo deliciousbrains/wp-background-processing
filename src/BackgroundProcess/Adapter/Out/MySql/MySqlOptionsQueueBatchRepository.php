@@ -128,7 +128,18 @@ final class MySqlOptionsQueueBatchRepository implements QueueBatchRepository
 
     public function deleteBatchItem(BatchItem $item): QueueBatchRepository
     {
-        $this->batchTable->delete($item);
+        $query = "DELETE FROM {$this->tableName} WHERE option_name='{$item->key()}'";
+
+        $result = $this->mysqli->query($query);
+
+        if ($result === false)
+        {
+            throw new RepositoryException(
+                'Could not delete item.',
+                0,
+                new \mysqli_sql_exception($this->mysqli->error)
+            );
+        }
 
         return $this;
     }
