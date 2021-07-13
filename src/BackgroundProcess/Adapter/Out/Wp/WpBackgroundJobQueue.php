@@ -52,7 +52,7 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
             $this->handleCronHealthcheck();
         });
         add_filter('cron_schedules', function($schedules): void {
-            $this->scheduleCronHealthcheck($schedules);
+            return $this->scheduleCronHealthcheck($schedules);
         });
 
         $this->batchRepository = $batchRepository;
