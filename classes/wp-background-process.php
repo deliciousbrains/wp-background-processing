@@ -69,6 +69,12 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * @return void
 	 */
 	public function dispatch() {
+
+		if ( $this->is_process_running() ) {
+			// Process already running.
+			return true;
+		}
+
 		// Schedule the cron healthcheck.
 		$this->schedule_event();
 
