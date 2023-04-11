@@ -51,7 +51,7 @@ abstract class WP_Async_Request {
 	protected $data = array();
 
 	/**
-	 * Initiate new async request
+	 * Initiate new async request.
 	 */
 	public function __construct() {
 		$this->identifier = $this->prefix . '_' . $this->action;
@@ -61,7 +61,7 @@ abstract class WP_Async_Request {
 	}
 
 	/**
-	 * Set data used during the request
+	 * Set data used during the request.
 	 *
 	 * @param array $data Data.
 	 *
@@ -74,7 +74,7 @@ abstract class WP_Async_Request {
 	}
 
 	/**
-	 * Dispatch the async request
+	 * Dispatch the async request.
 	 *
 	 * @return array|WP_Error
 	 */
@@ -86,7 +86,7 @@ abstract class WP_Async_Request {
 	}
 
 	/**
-	 * Get query args
+	 * Get query args.
 	 *
 	 * @return array
 	 */
@@ -109,7 +109,7 @@ abstract class WP_Async_Request {
 	}
 
 	/**
-	 * Get query URL
+	 * Get query URL.
 	 *
 	 * @return string
 	 */
@@ -129,7 +129,7 @@ abstract class WP_Async_Request {
 	}
 
 	/**
-	 * Get post args
+	 * Get post args.
 	 *
 	 * @return array
 	 */
@@ -155,12 +155,12 @@ abstract class WP_Async_Request {
 	}
 
 	/**
-	 * Maybe handle
+	 * Maybe handle a dispatched request.
 	 *
 	 * Check for correct nonce and pass to handler.
 	 */
 	public function maybe_handle() {
-		// Don't lock up other requests while processing
+		// Don't lock up other requests while processing.
 		session_write_close();
 
 		check_ajax_referer( $this->identifier, 'nonce' );
@@ -171,11 +171,10 @@ abstract class WP_Async_Request {
 	}
 
 	/**
-	 * Handle
+	 * Handle a dispatched request.
 	 *
 	 * Override this method to perform any actions required
 	 * during the async request.
 	 */
 	abstract protected function handle();
-
 }

@@ -33,13 +33,13 @@ class WP_Example_Request extends WP_Async_Request {
 	protected $action = 'example_request';
 
 	/**
-	 * Handle
+	 * Handle a dispatched request.
 	 *
 	 * Override this method to perform any actions required
 	 * during the async request.
 	 */
 	protected function handle() {
-		// Actions to perform
+		// Actions to perform.
 	}
 
 }
@@ -73,7 +73,7 @@ Chaining is also supported:
 
 ### Background Process
 
-Background processes work in a similar fashion to async requests but they allow you to queue tasks. Items pushed onto the queue will be processed in the background once the queue has been dispatched. Queues will also scale based on available server resources, so higher end servers will process more items per batch. Once a batch has completed the next batch will start instantly.
+Background processes work in a similar fashion to async requests, but they allow you to queue tasks. Items pushed onto the queue will be processed in the background once the queue has been dispatched. Queues will also scale based on available server resources, so higher end servers will process more items per batch. Once a batch has completed, the next batch will start instantly.
 
 Health checks run by default every 5 minutes to ensure the queue is running when queued items exist. If the queue has failed it will be restarted.
 
@@ -90,25 +90,25 @@ class WP_Example_Process extends WP_Background_Process {
 	protected $action = 'example_process';
 
 	/**
-	 * Task
+	 * Perform task with queued item.
 	 *
 	 * Override this method to perform any actions required on each
 	 * queue item. Return the modified item for further processing
 	 * in the next pass through. Or, return false to remove the
 	 * item from the queue.
 	 *
-	 * @param mixed $item Queue item to iterate over
+	 * @param mixed $item Queue item to iterate over.
 	 *
 	 * @return mixed
 	 */
 	protected function task( $item ) {
-		// Actions to perform
+		// Actions to perform.
 
 		return false;
 	}
 
 	/**
-	 * Complete
+	 * Complete processing.
 	 *
 	 * Override if applicable, but ensure that the below actions are
 	 * performed, or, call parent::complete().
@@ -156,7 +156,7 @@ Save and dispatch the queue:
 
 ### BasicAuth
 
-If your site is behind BasicAuth, both async requests and background processes will fail to complete. This is because WP Background Processing relies on the [WordPress HTTP API](http://codex.wordpress.org/HTTP_API), which requires you to attach your BasicAuth credentials to requests. The easiest way to do this is using the following filter:
+If your site is behind BasicAuth, both async requests and background processes will fail to complete. This is because WP Background Processing relies on the [WordPress HTTP API](https://developer.wordpress.org/plugins/http-api/), which requires you to attach your BasicAuth credentials to requests. The easiest way to do this is using the following filter:
 
 ```php
 function wpbp_http_request_args( $r, $url ) {
