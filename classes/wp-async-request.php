@@ -76,7 +76,7 @@ abstract class WP_Async_Request {
 	/**
 	 * Dispatch the async request.
 	 *
-	 * @return array|WP_Error
+	 * @return array|WP_Error|false HTTP Response array, WP_Error on failure, or false if not attempted.
 	 */
 	public function dispatch() {
 		$url  = add_query_arg( $this->get_query_args(), $this->get_query_url() );

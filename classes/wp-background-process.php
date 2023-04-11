@@ -66,13 +66,12 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * Schedule the cron healthcheck and dispatch an async request to start processing the queue.
 	 *
 	 * @access public
-	 * @return array|WP_Error
+	 * @return array|WP_Error|false HTTP Response array, WP_Error on failure, or false if not attempted.
 	 */
 	public function dispatch() {
-
 		if ( $this->is_process_running() ) {
 			// Process already running.
-			return true;
+			return false;
 		}
 
 		// Schedule the cron healthcheck.
