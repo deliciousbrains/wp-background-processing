@@ -32,7 +32,8 @@ job-references:
       - WP_CORE_DIR: "/tmp/wordpress/"
     steps:
       - checkout
-      - php/install-composer
+      - run: php --version
+      - run: composer --version
       - run: *setup_environment
       - run: *install_dependencies
       - run:
