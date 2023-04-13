@@ -2,12 +2,11 @@ workflows:
   version: 2
   main:
     jobs:
-      - php56-build
-      - php70-build
-      - php71-build
       - php72-build
       - php73-build
       - php74-build
+      - php80-build
+      - php81-build
 
 version: 2
 
@@ -80,4 +79,16 @@ jobs:
     <<: *php_job
     docker:
       - image: cimg/php:7.4
+      - image: *mysql_image
+
+  php80-build:
+    <<: *php_job
+    docker:
+      - image: cimg/php:8.0
+      - image: *mysql_image
+
+  php81-build:
+    <<: *php_job
+    docker:
+      - image: cimg/php:8.1
       - image: *mysql_image
