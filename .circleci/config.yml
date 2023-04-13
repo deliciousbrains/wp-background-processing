@@ -13,7 +13,7 @@ version: 2
 
 job-references:
   mysql_image: &mysql_image
-    circleci/mysql:5.6
+    cimg/mysql:5.6
 
   setup_environment: &setup_environment
     name: "Setup Environment Variables"
@@ -25,9 +25,6 @@ job-references:
     name: "Install Dependencies"
     command: |
       sudo apt-get update && sudo apt-get install subversion
-      sudo -E docker-php-ext-install mysqli
-      sudo sh -c "printf '\ndeb http://ftp.us.debian.org/debian sid main\n' >> /etc/apt/sources.list"
-      sudo apt-get update && sudo apt-get install mariadb-client
 
   php_job: &php_job
     environment:
@@ -35,75 +32,51 @@ job-references:
       - WP_CORE_DIR: "/tmp/wordpress/"
     steps:
       - checkout
+      - php/install-composer
       - run: *setup_environment
       - run: *install_dependencies
       - run:
           name: "Run Tests"
           command: |
-            composer global require "phpunit/phpunit=5.7.*"
-            composer global require wp-coding-standards/wpcs
-            phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs
-            phpcs
             rm -rf $WP_TESTS_DIR $WP_CORE_DIR
             bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1 latest
-            phpunit
-            WP_MULTISITE=1 phpunit
+            make test-unit
+            WP_MULTISITE=1 make test-unit
+            make test-style
 
 jobs:
   php56-build:
     <<: *php_job
     docker:
-      - image: circleci/php:5.6
+      - image: cimg/php:5.6
       - image: *mysql_image
-    steps:
-      - checkout
-      - run: *setup_environment
-      - run: *install_dependencies
-      - run:
-          name: "Run Tests"
-          command: |
-            composer global require "phpunit/phpunit=5.7.*"
-            composer global require wp-coding-standards/wpcs
-            phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs
-            phpcs
-            SKIP_DB_CREATE=false
-            rm -rf $WP_TESTS_DIR $WP_CORE_DIR
-            bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1 latest $SKIP_DB_CREATE
-            phpunit
-            WP_MULTISITE=1 phpunit
-            SKIP_DB_CREATE=true
-            rm -rf $WP_TESTS_DIR $WP_CORE_DIR
-            bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1 trunk $SKIP_DB_CREATE
-            phpunit
-            WP_MULTISITE=1 phpunit
-            SKIP_DB_CREATE=true
 
   php70-build:
     <<: *php_job
     docker:
-      - image: circleci/php:7.0
+      - image: cimg/php:7.0
       - image: *mysql_image
 
   php71-build:
     <<: *php_job
     docker:
-      - image: circleci/php:7.1
+      - image: cimg/php:7.1
       - image: *mysql_image
 
   php72-build:
     <<: *php_job
     docker:
-      - image: circleci/php:7.2
+      - image: cimg/php:7.2
       - image: *mysql_image
 
   php73-build:
     <<: *php_job
     docker:
-      - image: circleci/php:7.3
+      - image: cimg/php:7.3
       - image: *mysql_image
 
   php74-build:
     <<: *php_job
     docker:
-      - image: circleci/php:7.4
+      - image: cimg/php:7.4
       - image: *mysql_image
