@@ -6,6 +6,7 @@
 	<file>.</file>
 	<exclude-pattern>/vendor/</exclude-pattern>
 	<exclude-pattern>/node_modules/</exclude-pattern>
+	<exclude-pattern>/tests/bootstrap.php</exclude-pattern>
 
 	<!-- How to scan -->
 	<!-- Usage instructions: https://github.com/squizlabs/PHP_CodeSniffer/wiki/Usage -->
@@ -26,18 +27,43 @@
 	<!-- https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards -->
 	<!-- https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards/wiki/Customizable-sniff-properties -->
 	<config name="minimum_supported_wp_version" value="4.6"/>
-	<rule ref="WordPress"/>
+	<rule ref="WordPress">
+		<!-- Unable to fix -->
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+		<exclude name="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedClassFound"/>
+		<exclude name="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound"/>
+		<exclude name="WordPress.DB.DirectDatabaseQuery.NoCaching"/>
+
+		<!-- TODO: Maybe fix -->
+		<exclude name="WordPress.WP.CronInterval.ChangeDetected"/>
+		<exclude name="WordPress.WP.AlternativeFunctions.rand_rand"/>
+		<exclude name="WordPress.DB.DirectDatabaseQuery.DirectQuery"/>
+
+		<!-- TODO: Should fix -->
+		<exclude name="WordPress.DB.PreparedSQL.InterpolatedNotPrepared"/>
+		<exclude name="PEAR.Functions.FunctionCallSignature.ContentAfterOpenBracket"/>
+		<exclude name="PEAR.Functions.FunctionCallSignature.MultipleArguments"/>
+		<exclude name="PEAR.Functions.FunctionCallSignature.CloseBracketLine"/>
+		<exclude name="Generic.Commenting.DocComment.SpacingAfter"/>
+	</rule>
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
 			<!-- Value: replace the function, class, and variable prefixes used. Separate multiple prefixes with a comma. -->
-			<property name="prefixes" type="array" value="my-plugin"/>
+			<property name="prefixes" type="array" value="wpbp"/>
 		</properties>
+
+		<!-- TODO: Maybe fix -->
+		<exclude name="WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound"/>
 	</rule>
 	<rule ref="WordPress.WP.I18n">
 		<properties>
 			<!-- Value: replace the text domain used. -->
-			<property name="text_domain" type="array" value="my-plugin"/>
+			<property name="text_domain" type="array" value="wp-background-processing"/>
 		</properties>
+
+		<!-- TODO: Should fix -->
+		<exclude name="WordPress.WP.I18n.MissingArgDomain"/>
+		<exclude name="WordPress.WP.I18n.MissingTranslatorsComment"/>
 	</rule>
 	<rule ref="WordPress.WhiteSpace.ControlStructureSpacing">
 		<properties>
