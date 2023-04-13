@@ -24,7 +24,7 @@ job-references:
   install_dependencies: &install_dependencies
     name: "Install Dependencies"
     command: |
-      sudo apt-get update && sudo apt-get install subversion
+      sudo apt-get update && sudo apt-get install mysql-client subversion
 
   php_job: &php_job
     environment:
