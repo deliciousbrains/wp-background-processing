@@ -13,7 +13,7 @@ version: 2
 
 job-references:
   mysql_image: &mysql_image
-    cimg/mysql:5.6
+    cimg/mysql:5.7
 
   setup_environment: &setup_environment
     name: "Setup Environment Variables"
