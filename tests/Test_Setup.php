@@ -1,6 +1,6 @@
 <?php
 /**
- * Class TestItWorks
+ * Class Test_Setup
  *
  * @package WP-Background-Processing
  */
@@ -8,7 +8,7 @@
 /**
  * Sample test case.
  */
-class TestItWorks extends WP_UnitTestCase {
+class Test_Setup extends WP_UnitTestCase {
 
 	/**
 	 * Are unit tests set up correctly?
