@@ -6,7 +6,6 @@ workflows:
       - php73-build
       - php74-build
       - php80-build
-      - php81-build
 
 version: 2
 
