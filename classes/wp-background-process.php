@@ -149,13 +149,14 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * Generates a unique key based on microtime. Queue items are
 	 * given a unique key so that they can be merged upon save.
 	 *
-	 * @param int $length Length.
+	 * @param int    $length Optional max length to trim key to, defaults to 64 characters.
+	 * @param string $key    Optional string to append to identifier before hash, defaults to "batch".
 	 *
 	 * @return string
 	 */
-	protected function generate_key( $length = 64 ) {
+	protected function generate_key( $length = 64, $key = 'batch' ) {
 		$unique  = md5( microtime() . rand() );
-		$prepend = $this->identifier . '_batch_';
+		$prepend = $this->identifier . '_' . $key . '_';
 
 		return substr( $prepend . $unique, 0, $length );
 	}
@@ -264,7 +265,28 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * @return stdClass Return the first batch of queued items.
 	 */
 	protected function get_batch() {
+		return array_reduce(
+			$this->get_batches( 1 ),
+			function ( $carry, $batch ) {
+				return $batch;
+			},
+			array()
+		);
+	}
+
+	/**
+	 * Get batches.
+	 *
+	 * @param int $limit Number of batches to return, defaults to all.
+	 *
+	 * @return array of stdClass
+	 */
+	public function get_batches( $limit = 0 ) {
 		global $wpdb;
+
+		if ( empty( $limit ) || ! is_int( $limit ) ) {
+			$limit = 0;
+		}
 
 		$table        = $wpdb->options;
 		$column       = 'option_name';
@@ -280,19 +302,39 @@ abstract class WP_Background_Process extends WP_Async_Request {
 
 		$key = $wpdb->esc_like( $this->identifier . '_batch_' ) . '%';
 
-		$query = $wpdb->get_row( $wpdb->prepare( "
+		$sql = '
 			SELECT *
-			FROM $table
-			WHERE $column LIKE %s
-			ORDER BY $key_column ASC
-			LIMIT 1
-		", $key ) );
+			FROM ' . $table . '
+			WHERE ' . $column . ' LIKE %s
+			ORDER BY ' . $key_column . ' ASC
+			';
 
-		$batch       = new stdClass();
-		$batch->key  = $query->{$column};
-		$batch->data = maybe_unserialize( $query->{$value_column} );
+		$args = array( $key );
 
-		return $batch;
+		if ( ! empty( $limit ) ) {
+			$sql .= ' LIMIT %d';
+
+			$args[] = $limit;
+		}
+
+		$items = $wpdb->get_results( $wpdb->prepare( $sql, $args ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		$batches = array();
+
+		if ( ! empty( $items ) ) {
+			$batches = array_map(
+				function ( $item ) use ( $column, $value_column ) {
+					$batch       = new stdClass();
+					$batch->key  = $item->{$column};
+					$batch->data = maybe_unserialize( $item->{$value_column} );
+
+					return $batch;
+				},
+				$items
+			);
+		}
+
+		return $batches;
 	}
 
 	/**

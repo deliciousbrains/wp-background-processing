@@ -52,6 +52,25 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Execute a method of WPBP regardless of accessibility.
+	 *
+	 * @param string $name Method name.
+	 * @param mixed  $args None, one or more args to pass to method.
+	 *
+	 * @return mixed
+	 */
+	private function executeWPBPMethod( string $name, ...$args ) {
+		try {
+			$method = new ReflectionMethod( 'WP_Background_Process', $name );
+			$method->setAccessible( true );
+
+			return $method->invoke( $this->wpbp, ...$args );
+		} catch ( Exception $e ) {
+			return new WP_Error( $e->getCode(), $e->getMessage() );
+		}
+	}
+
+	/**
 	 * Test push_to_queue.
 	 *
 	 * @return void
@@ -66,5 +85,80 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 
 		$this->wpbp->push_to_queue( 'wobble' );
 		$this->assertEquals( array( 'wibble', 'wobble' ), $this->getWPBPProperty( 'data' ) );
+	}
+
+	/**
+	 * Test get_batches.
+	 *
+	 * @return void
+	 */
+	public function test_get_batches() {
+		$this->assertEmpty( $this->wpbp->get_batches(), 'no batches until save' );
+
+		$this->wpbp->push_to_queue( 'wibble' );
+		$this->assertNotEmpty( $this->getWPBPProperty( 'data' ) );
+		$this->assertEquals( array( 'wibble' ), $this->getWPBPProperty( 'data' ) );
+		$this->assertEmpty( $this->wpbp->get_batches(), 'no batches until save' );
+
+		$this->wpbp->push_to_queue( 'wobble' );
+		$this->assertEquals( array( 'wibble', 'wobble' ), $this->getWPBPProperty( 'data' ) );
+		$this->assertEmpty( $this->wpbp->get_batches(), 'no batches until save' );
+
+		$this->wpbp->save();
+		$first_batch = $this->wpbp->get_batches();
+		$this->assertNotEmpty( $first_batch );
+		$this->assertCount( 1, $first_batch );
+
+		$this->wpbp->push_to_queue( 'more wibble' );
+		$this->wpbp->save();
+		$this->assertCount( 2, $this->wpbp->get_batches() );
+
+		$this->wpbp->push_to_queue( 'Wibble wobble all day long.' );
+		$this->wpbp->save();
+		$this->assertCount( 3, $this->wpbp->get_batches() );
+
+		$this->assertEquals( $first_batch, $this->wpbp->get_batches( 1 ) );
+		$this->assertNotEquals( $first_batch, $this->wpbp->get_batches( 2 ) );
+		$this->assertCount( 2, $this->wpbp->get_batches( 2 ) );
+		$this->assertCount( 3, $this->wpbp->get_batches( 3 ) );
+		$this->assertCount( 3, $this->wpbp->get_batches( 5 ) );
+	}
+
+	/**
+	 * Test get_batch.
+	 *
+	 * @return void
+	 */
+	public function test_get_batch() {
+		$this->assertEmpty( $this->executeWPBPMethod( 'get_batch' ), 'no batches until save' );
+
+		$this->wpbp->push_to_queue( 'wibble' );
+		$this->assertNotEmpty( $this->getWPBPProperty( 'data' ) );
+		$this->assertEquals( array( 'wibble' ), $this->getWPBPProperty( 'data' ) );
+		$this->assertEmpty( $this->executeWPBPMethod( 'get_batch' ), 'no batches until save' );
+
+		$this->wpbp->push_to_queue( 'wobble' );
+		$this->assertEquals( array( 'wibble', 'wobble' ), $this->getWPBPProperty( 'data' ) );
+		$this->assertEmpty( $this->executeWPBPMethod( 'get_batch' ), 'no batches until save' );
+
+		$this->wpbp->save();
+		$first_batch = $this->executeWPBPMethod( 'get_batch' );
+		$this->assertNotEmpty( $first_batch );
+		$this->assertInstanceOf( 'stdClass', $first_batch );
+		$this->assertEquals( array( 'wibble', 'wobble' ), $first_batch->data );
+
+		$this->wpbp->push_to_queue( 'more wibble' );
+		$this->wpbp->save();
+		$second_batch = $this->executeWPBPMethod( 'get_batch' );
+		$this->assertNotEmpty( $second_batch );
+		$this->assertInstanceOf( 'stdClass', $second_batch );
+		$this->assertEquals( $first_batch, $second_batch, 'same 1st batch returned until deleted' );
+
+		$this->executeWPBPMethod( 'delete', $first_batch->key );
+		$second_batch = $this->executeWPBPMethod( 'get_batch' );
+		$this->assertNotEmpty( $second_batch );
+		$this->assertInstanceOf( 'stdClass', $second_batch );
+		$this->assertNotEquals( $first_batch, $second_batch, '2nd batch returned as 1st deleted' );
+		$this->assertEquals( array( 'more wibble' ), $second_batch->data );
 	}
 }
