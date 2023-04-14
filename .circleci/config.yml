@@ -1,0 +1,93 @@
+workflows:
+  version: 2
+  main:
+    jobs:
+      - php72-build
+      - php73-build
+      - php74-build
+      - php80-build
+
+version: 2
+
+job-references:
+  mysql_image: &mysql_image
+    cimg/mysql:5.7
+
+  setup_environment: &setup_environment
+    name: "Setup Environment Variables"
+    command: |
+      echo "export PATH=$HOME/.composer/vendor/bin:$PATH" >> $BASH_ENV
+      source /home/circleci/.bashrc
+
+  install_dependencies: &install_dependencies
+    name: "Install Dependencies"
+    command: |
+      sudo apt-get update && sudo apt-get install mysql-client subversion
+
+  php_job: &php_job
+    environment:
+      - WP_TESTS_DIR: "/tmp/wordpress-tests-lib"
+      - WP_CORE_DIR: "/tmp/wordpress/"
+    steps:
+      - checkout
+      - run: php --version
+      - run: composer --version
+      - run: *setup_environment
+      - run: *install_dependencies
+      - run:
+          name: "Run Tests"
+          command: |
+            rm -rf $WP_TESTS_DIR $WP_CORE_DIR
+            bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1 latest
+            make test-unit
+            WP_MULTISITE=1 make test-unit
+            make test-style
+
+jobs:
+  php56-build:
+    <<: *php_job
+    docker:
+      - image: cimg/php:5.6
+      - image: *mysql_image
+
+  php70-build:
+    <<: *php_job
+    docker:
+      - image: cimg/php:7.0
+      - image: *mysql_image
+
+  php71-build:
+    <<: *php_job
+    docker:
+      - image: cimg/php:7.1
+      - image: *mysql_image
+
+  php72-build:
+    <<: *php_job
+    docker:
+      - image: cimg/php:7.2
+      - image: *mysql_image
+
+  php73-build:
+    <<: *php_job
+    docker:
+      - image: cimg/php:7.3
+      - image: *mysql_image
+
+  php74-build:
+    <<: *php_job
+    docker:
+      - image: cimg/php:7.4
+      - image: *mysql_image
+
+  php80-build:
+    <<: *php_job
+    docker:
+      - image: cimg/php:8.0
+      - image: *mysql_image
+
+  php81-build:
+    <<: *php_job
+    docker:
+      - image: cimg/php:8.1
+      - image: *mysql_image
