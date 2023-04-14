@@ -154,7 +154,7 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'stdClass', $second_batch );
 		$this->assertEquals( $first_batch, $second_batch, 'same 1st batch returned until deleted' );
 
-		$this->executeWPBPMethod( 'delete', $first_batch->key );
+		$this->wpbp->delete( $first_batch->key );
 		$second_batch = $this->executeWPBPMethod( 'get_batch' );
 		$this->assertNotEmpty( $second_batch );
 		$this->assertInstanceOf( 'stdClass', $second_batch );
