@@ -108,6 +108,9 @@ abstract class WP_Background_Process extends WP_Async_Request {
 			update_site_option( $key, $this->data );
 		}
 
+		// Clean out data so that new data isn't prepended with closed session's data.
+		$this->data = array();
+
 		return $this;
 	}
 
