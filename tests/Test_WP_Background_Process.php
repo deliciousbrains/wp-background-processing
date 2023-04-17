@@ -386,4 +386,89 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->assertFalse( $resumed_fired, 'resumed action still not fired yet' );
 		$this->assertTrue( $completed_fired, 'completed action fired' );
 	}
+
+	/**
+	 * Test maybe_handle when handling a single batch.
+	 *
+	 * @return void
+	 */
+	public function test_maybe_handle_single_batch() {
+		// Cancelled action should not be fired.
+		$cancelled_fired = false;
+		add_action( $this->getWPBPProperty( 'identifier' ) . '_cancelled', function () use ( &$cancelled_fired ) {
+			$cancelled_fired = true;
+		} );
+		// Paused action should not be fired.
+		$paused_fired = false;
+		add_action( $this->getWPBPProperty( 'identifier' ) . '_paused', function () use ( &$paused_fired ) {
+			$paused_fired = true;
+		} );
+		// Resumed action should not be fired.
+		$resumed_fired = false;
+		add_action( $this->getWPBPProperty( 'identifier' ) . '_resumed', function () use ( &$resumed_fired ) {
+			$resumed_fired = true;
+		} );
+		// Completed action should fire after batches handled.
+		$completed_fired = false;
+		add_action( $this->getWPBPProperty( 'identifier' ) . '_completed', function () use ( &$completed_fired ) {
+			$completed_fired = true;
+		} );
+		add_filter( $this->getWPBPProperty( 'identifier' ) . '_wp_die', '__return_false' );
+		$this->wpbp->push_to_queue( 'wibble' );
+		$this->wpbp->save();
+		$this->assertCount( 1, $this->wpbp->get_batches() );
+		$this->assertFalse( $cancelled_fired, 'cancelled action not fired yet' );
+		$this->assertFalse( $paused_fired, 'paused action not fired yet' );
+		$this->assertFalse( $resumed_fired, 'resumed action not fired yet' );
+		$this->assertFalse( $completed_fired, 'completed action not fired yet' );
+
+		$_REQUEST['nonce'] = wp_create_nonce( $this->getWPBPProperty( 'identifier' ) );
+		$this->wpbp->maybe_handle();
+		$this->assertCount( 0, $this->wpbp->get_batches(), 'after resume all batches processed with maybe_handle' );
+		$this->assertFalse( $cancelled_fired, 'cancelled action still not fired yet' );
+		$this->assertFalse( $paused_fired, 'paused action not fired yet' );
+		$this->assertFalse( $resumed_fired, 'resumed action still not fired yet' );
+		$this->assertTrue( $completed_fired, 'completed action fired' );
+	}
+
+	/**
+	 * Test maybe_handle when handling nothing.
+	 *
+	 * @return void
+	 */
+	public function test_maybe_handle_nothing() {
+		// Cancelled action should not be fired.
+		$cancelled_fired = false;
+		add_action( $this->getWPBPProperty( 'identifier' ) . '_cancelled', function () use ( &$cancelled_fired ) {
+			$cancelled_fired = true;
+		} );
+		// Paused action should not be fired.
+		$paused_fired = false;
+		add_action( $this->getWPBPProperty( 'identifier' ) . '_paused', function () use ( &$paused_fired ) {
+			$paused_fired = true;
+		} );
+		// Resumed action should not be fired.
+		$resumed_fired = false;
+		add_action( $this->getWPBPProperty( 'identifier' ) . '_resumed', function () use ( &$resumed_fired ) {
+			$resumed_fired = true;
+		} );
+		// Completed action should not be fired.
+		$completed_fired = false;
+		add_action( $this->getWPBPProperty( 'identifier' ) . '_completed', function () use ( &$completed_fired ) {
+			$completed_fired = true;
+		} );
+		add_filter( $this->getWPBPProperty( 'identifier' ) . '_wp_die', '__return_false' );
+		$this->assertCount( 0, $this->wpbp->get_batches() );
+		$this->assertFalse( $cancelled_fired, 'cancelled action not fired yet' );
+		$this->assertFalse( $paused_fired, 'paused action not fired yet' );
+		$this->assertFalse( $resumed_fired, 'resumed action not fired yet' );
+		$this->assertFalse( $completed_fired, 'completed action not fired yet' );
+
+		$this->wpbp->maybe_handle();
+		$this->assertCount( 0, $this->wpbp->get_batches(), 'after resume all batches processed with maybe_handle' );
+		$this->assertFalse( $cancelled_fired, 'cancelled action still not fired yet' );
+		$this->assertFalse( $paused_fired, 'paused action not fired yet' );
+		$this->assertFalse( $resumed_fired, 'resumed action still not fired yet' );
+		$this->assertFalse( $completed_fired, 'completed action not fired yet' );
+	}
 }
