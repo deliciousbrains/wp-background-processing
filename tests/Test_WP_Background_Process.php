@@ -205,4 +205,23 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->wpbp->pause();
 		$this->assertTrue( $this->wpbp->is_paused() );
 	}
+
+	/**
+	 * Test delete.
+	 *
+	 * @return void
+	 */
+	public function test_delete() {
+		$this->wpbp->push_to_queue( 'wibble' );
+		$this->wpbp->save();
+		$this->assertCount( 1, $this->wpbp->get_batches() );
+		$this->wpbp->push_to_queue( 'wobble' );
+		$this->wpbp->save();
+		$this->assertCount( 2, $this->wpbp->get_batches() );
+		$first_batch = $this->executeWPBPMethod( 'get_batch' );
+		$this->wpbp->delete( $first_batch->key );
+		$this->assertCount( 1, $this->wpbp->get_batches() );
+		$second_batch = $this->executeWPBPMethod( 'get_batch' );
+		$this->assertNotEquals( $first_batch, $second_batch, '2nd batch returned as 1st deleted' );
+	}
 }
