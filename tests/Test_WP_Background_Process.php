@@ -192,4 +192,17 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->wpbp->cancel();
 		$this->assertTrue( $this->wpbp->is_cancelled() );
 	}
+
+	/**
+	 * Test pause.
+	 *
+	 * @return void
+	 */
+	public function test_pause() {
+		$this->wpbp->push_to_queue( 'wibble' );
+		$this->wpbp->save();
+		$this->assertFalse( $this->wpbp->is_paused() );
+		$this->wpbp->pause();
+		$this->assertTrue( $this->wpbp->is_paused() );
+	}
 }
