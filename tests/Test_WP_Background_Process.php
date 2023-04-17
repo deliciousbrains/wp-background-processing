@@ -88,6 +88,24 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test save.
+	 *
+	 * @return void
+	 */
+	public function test_save() {
+		$this->assertClassHasAttribute( 'data', 'WP_Background_Process', 'class has data property' );
+		$this->assertEmpty( $this->getWPBPProperty( 'data' ) );
+		$this->assertEmpty( $this->wpbp->get_batches(), 'no batches until save' );
+
+		$this->wpbp->push_to_queue( 'wibble' );
+		$this->assertNotEmpty( $this->getWPBPProperty( 'data' ) );
+		$this->assertEquals( array( 'wibble' ), $this->getWPBPProperty( 'data' ) );
+		$this->wpbp->save();
+		$this->assertEmpty( $this->getWPBPProperty( 'data' ), 'data emptied after save' );
+		$this->assertNotEmpty( $this->wpbp->get_batches(), 'batches exist after save' );
+	}
+
+	/**
 	 * Test get_batches.
 	 *
 	 * @return void
