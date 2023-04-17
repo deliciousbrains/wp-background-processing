@@ -290,31 +290,33 @@ abstract class WP_Background_Process extends WP_Async_Request {
 
 		if ( $this->is_process_running() ) {
 			// Background process already running.
-			wp_die();
+			return $this->maybe_wp_die();
 		}
 
 		if ( $this->is_cancelled() ) {
 			$this->clear_scheduled_event();
 			$this->delete_all();
-			wp_die();
+
+			return $this->maybe_wp_die();
 		}
 
 		if ( $this->is_paused() ) {
 			$this->clear_scheduled_event();
 			$this->paused();
-			wp_die();
+
+			return $this->maybe_wp_die();
 		}
 
 		if ( $this->is_queue_empty() ) {
 			// No data to process.
-			wp_die();
+			return $this->maybe_wp_die();
 		}
 
 		check_ajax_referer( $this->identifier, 'nonce' );
 
 		$this->handle();
 
-		wp_die();
+		return $this->maybe_wp_die();
 	}
 
 	/**
@@ -534,7 +536,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 			$this->complete();
 		}
 
-		wp_die();
+		return $this->maybe_wp_die();
 	}
 
 	/**

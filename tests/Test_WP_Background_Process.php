@@ -275,4 +275,37 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->assertNotEquals( $first_batch, $updated_batch, 'fetched updated batch different to 1st fetch' );
 		$this->assertEquals( array( 'Wibble wobble all day long!' ), $updated_batch->data, 'fetched updated batch has expected data' );
 	}
+
+	/**
+	 * Test maybe_handle when cancelling.
+	 *
+	 * @return void
+	 */
+	public function test_maybe_handle_cancelled() {
+		// Cancelled status results in cleared batches and action fired.
+		$cancelled_fired = false;
+		add_action( $this->getWPBPProperty( 'identifier' ) . '_cancelled', function () use ( &$cancelled_fired ) {
+			$cancelled_fired = true;
+		} );
+		// Paused action should not be fired though.
+		$paused_fired = false;
+		add_action( $this->getWPBPProperty( 'identifier' ) . '_paused', function () use ( &$paused_fired ) {
+			$paused_fired = true;
+		} );
+		add_filter( $this->getWPBPProperty( 'identifier' ) . '_wp_die', '__return_false' );
+		$this->wpbp->push_to_queue( 'wibble' );
+		$this->wpbp->save();
+		$this->assertCount( 1, $this->wpbp->get_batches() );
+		$this->wpbp->push_to_queue( 'wobble' );
+		$this->wpbp->save();
+		$this->assertCount( 2, $this->wpbp->get_batches() );
+		update_site_option( $this->executeWPBPMethod( 'get_status_key' ), WP_Background_Process::STATUS_CANCELLED );
+		$this->assertCount( 2, $this->wpbp->get_batches() );
+		$this->assertFalse( $cancelled_fired, 'cancelled action not fired yet' );
+		$this->assertFalse( $paused_fired, 'paused action not fired yet' );
+		$this->wpbp->maybe_handle();
+		$this->assertCount( 0, $this->wpbp->get_batches() );
+		$this->assertTrue( $cancelled_fired, 'cancelled action fired' );
+		$this->assertFalse( $paused_fired, 'paused action still not fired yet' );
+	}
 }
