@@ -179,4 +179,17 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->assertNotEquals( $first_batch, $second_batch, '2nd batch returned as 1st deleted' );
 		$this->assertEquals( array( 'more wibble' ), $second_batch->data );
 	}
+
+	/**
+	 * Test cancel.
+	 *
+	 * @return void
+	 */
+	public function test_cancel() {
+		$this->wpbp->push_to_queue( 'wibble' );
+		$this->wpbp->save();
+		$this->assertFalse( $this->wpbp->is_cancelled() );
+		$this->wpbp->cancel();
+		$this->assertTrue( $this->wpbp->is_cancelled() );
+	}
 }
