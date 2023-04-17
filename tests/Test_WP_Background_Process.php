@@ -224,4 +224,20 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$second_batch = $this->executeWPBPMethod( 'get_batch' );
 		$this->assertNotEquals( $first_batch, $second_batch, '2nd batch returned as 1st deleted' );
 	}
+
+	/**
+	 * Test delete_all.
+	 *
+	 * @return void
+	 */
+	public function test_delete_all() {
+		$this->wpbp->push_to_queue( 'wibble' );
+		$this->wpbp->save();
+		$this->assertCount( 1, $this->wpbp->get_batches() );
+		$this->wpbp->push_to_queue( 'wobble' );
+		$this->wpbp->save();
+		$this->assertCount( 2, $this->wpbp->get_batches() );
+		$this->wpbp->delete_all();
+		$this->assertCount( 0, $this->wpbp->get_batches() );
+	}
 }
