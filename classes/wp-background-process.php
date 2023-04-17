@@ -83,7 +83,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * @return array|WP_Error|false HTTP Response array, WP_Error on failure, or false if not attempted.
 	 */
 	public function dispatch() {
-		if ( $this->is_process_running() ) {
+		if ( $this->is_processing() ) {
 			// Process already running.
 			return false;
 		}
@@ -288,7 +288,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 		// Don't lock up other requests while processing.
 		session_write_close();
 
-		if ( $this->is_process_running() ) {
+		if ( $this->is_processing() ) {
 			// Background process already running.
 			return $this->maybe_wp_die();
 		}
@@ -353,8 +353,22 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 *
 	 * Check whether the current process is already running
 	 * in a background process.
+	 *
+	 * @return bool
+	 *
+	 * @deprecated 1.1.0 Superseded.
+	 * @see        is_processing()
 	 */
 	protected function is_process_running() {
+		return $this->is_processing();
+	}
+
+	/**
+	 * Is the background process currently running?
+	 *
+	 * @return bool
+	 */
+	public function is_processing() {
 		if ( get_site_transient( $this->identifier . '_process_lock' ) ) {
 			// Process already running.
 			return true;
@@ -659,7 +673,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * and data exists in the queue.
 	 */
 	public function handle_cron_healthcheck() {
-		if ( $this->is_process_running() ) {
+		if ( $this->is_processing() ) {
 			// Background process already running.
 			exit;
 		}

@@ -471,4 +471,32 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->assertFalse( $resumed_fired, 'resumed action still not fired yet' );
 		$this->assertFalse( $completed_fired, 'completed action not fired yet' );
 	}
+
+	/**
+	 * Test is_processing.
+	 *
+	 * @return void
+	 */
+	public function test_is_processing() {
+		$this->assertFalse( $this->wpbp->is_processing(), 'not processing yet' );
+		$this->executeWPBPMethod( 'lock_process' );
+		$this->assertTrue( $this->wpbp->is_processing(), 'processing' );
+
+		// With batches to be processed, maybe_handle does nothing as "another instance is processing".
+		add_filter( $this->getWPBPProperty( 'identifier' ) . '_wp_die', '__return_false' );
+		$this->wpbp->push_to_queue( 'wibble' );
+		$this->wpbp->save();
+		$this->assertCount( 1, $this->wpbp->get_batches() );
+		$this->wpbp->maybe_handle();
+		$this->assertCount( 1, $this->wpbp->get_batches() );
+
+		// Unlock and maybe_handle can process the batch.
+		$this->executeWPBPMethod( 'unlock_process' );
+		$this->assertFalse( $this->wpbp->is_processing(), 'not processing yet' );
+		$this->assertCount( 1, $this->wpbp->get_batches() );
+		$_REQUEST['nonce'] = wp_create_nonce( $this->getWPBPProperty( 'identifier' ) );
+		$this->wpbp->maybe_handle();
+		$this->assertCount( 0, $this->wpbp->get_batches() );
+		$this->assertFalse( $this->wpbp->is_processing(), 'not left processing on complete' );
+	}
 }

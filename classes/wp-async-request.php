@@ -183,7 +183,7 @@ abstract class WP_Async_Request {
 		/**
 		 * Should wp_die be used?
 		 *
-		 * @returns bool
+		 * @return bool
 		 */
 		if ( apply_filters( $this->identifier . '_wp_die', true ) ) {
 			wp_die();
