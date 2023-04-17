@@ -255,4 +255,24 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->wpbp->delete_all();
 		$this->assertCount( 0, $this->wpbp->get_batches() );
 	}
+
+	/**
+	 * Test update.
+	 *
+	 * @return void
+	 */
+	public function test_update() {
+		$this->wpbp->push_to_queue( 'wibble' );
+		$this->wpbp->save();
+		$this->assertCount( 1, $this->wpbp->get_batches() );
+		$this->wpbp->push_to_queue( 'wobble' );
+		$this->wpbp->save();
+		$this->assertCount( 2, $this->wpbp->get_batches() );
+		$first_batch = $this->executeWPBPMethod( 'get_batch' );
+		$this->wpbp->update( $first_batch->key, array( 'Wibble wobble all day long!' ) );
+		$this->assertCount( 2, $this->wpbp->get_batches() );
+		$updated_batch = $this->executeWPBPMethod( 'get_batch' );
+		$this->assertNotEquals( $first_batch, $updated_batch, 'fetched updated batch different to 1st fetch' );
+		$this->assertEquals( array( 'Wibble wobble all day long!' ), $updated_batch->data, 'fetched updated batch has expected data' );
+	}
 }
