@@ -207,6 +207,21 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test resume.
+	 *
+	 * @return void
+	 */
+	public function test_resume() {
+		$this->wpbp->push_to_queue( 'wibble' );
+		$this->wpbp->save();
+		$this->assertFalse( $this->wpbp->is_paused() );
+		$this->wpbp->pause();
+		$this->assertTrue( $this->wpbp->is_paused() );
+		$this->wpbp->resume();
+		$this->assertFalse( $this->wpbp->is_paused() );
+	}
+
+	/**
 	 * Test delete.
 	 *
 	 * @return void
