@@ -267,6 +267,15 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	}
 
 	/**
+	 * Is the tool currently active, e.g. starting, working, paused or cleaning up?
+	 *
+	 * @return bool
+	 */
+	public function is_active() {
+		return $this->is_queued() || $this->is_processing() || $this->is_paused() || $this->is_cancelled();
+	}
+
+	/**
 	 * Generate key for a batch.
 	 *
 	 * Generates a unique key based on microtime. Queue items are

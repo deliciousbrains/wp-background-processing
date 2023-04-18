@@ -521,4 +521,69 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->wpbp->delete_all();
 		$this->assertFalse( $this->wpbp->is_queued(), 'queue emptied' );
 	}
+
+	/**
+	 * Test is_active.
+	 *
+	 * @return void
+	 */
+	public function test_is_active() {
+		$this->assertFalse( $this->wpbp->is_active(), 'not queued, processing, paused or cancelling' );
+
+		// Queued.
+		$this->wpbp->push_to_queue( 'wibble' );
+		$this->assertFalse( $this->wpbp->is_active(), 'nothing queued until save' );
+
+		$this->wpbp->save();
+		$this->assertTrue( $this->wpbp->is_active(), 'queued items exist, so now active' );
+
+		$this->wpbp->delete_all();
+		$this->assertFalse( $this->wpbp->is_active(), 'queue emptied, so no longer active' );
+
+		// Processing.
+		$this->executeWPBPMethod( 'lock_process' );
+		$this->assertTrue( $this->wpbp->is_active(), 'processing, so now active' );
+
+		$this->executeWPBPMethod( 'unlock_process' );
+		$this->assertFalse( $this->wpbp->is_active(), 'not processing, so no longer active' );
+
+		// Paused.
+		$this->wpbp->pause();
+		$this->assertTrue( $this->wpbp->is_active(), 'paused, so now active' );
+
+		$this->wpbp->resume();
+		$this->assertFalse( $this->wpbp->is_active(), 'not paused, nothing queued, so no longer active' );
+
+		$this->wpbp->push_to_queue( 'wibble' );
+		$this->wpbp->save();
+		$this->assertTrue( $this->wpbp->is_active(), 'queued items exist, so now active' );
+		$this->wpbp->pause();
+		$this->assertTrue( $this->wpbp->is_active(), 'paused, so still active' );
+		add_filter( 'pre_http_request', '__return_true' );
+		$this->wpbp->resume();
+		remove_filter( 'pre_http_request', '__return_true' );
+		$this->assertTrue( $this->wpbp->is_active(), 'resumed but with queued items, so still active' );
+		$this->wpbp->delete_all();
+		$this->assertFalse( $this->wpbp->is_active(), 'queue emptied, so no longer active' );
+
+		// Cancelled.
+		add_filter( 'pre_http_request', '__return_true' );
+		$this->wpbp->cancel();
+		remove_filter( 'pre_http_request', '__return_true' );
+		$this->assertTrue( $this->wpbp->is_active(), 'cancelling, so now active' );
+
+		add_filter( $this->getWPBPProperty( 'identifier' ) . '_wp_die', '__return_false' );
+		$this->wpbp->maybe_handle();
+		$this->assertFalse( $this->wpbp->is_active(), 'cancel handled, so no longer active' );
+
+		$this->wpbp->push_to_queue( 'wibble' );
+		$this->wpbp->save();
+		$this->assertTrue( $this->wpbp->is_active(), 'queued items exist, so now active' );
+		add_filter( 'pre_http_request', '__return_true' );
+		$this->wpbp->cancel();
+		remove_filter( 'pre_http_request', '__return_true' );
+		$this->assertTrue( $this->wpbp->is_active(), 'cancelling, so still active' );
+		$this->wpbp->maybe_handle();
+		$this->assertFalse( $this->wpbp->is_active(), 'cancel handled, queue emptied, so no longer active' );
+	}
 }

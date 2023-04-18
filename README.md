@@ -276,6 +276,18 @@ add_action( 'my_plugin_example_process_cancelled', function() {
 
 The "cancelled" action fires once the queue has been cleared down and cancelled status removed. After which `is_cancelled()` will no longer be true as the background process is now dormant.
 
+##### Active
+
+To check whether a background process has queued items, is processing, is paused, or is cancelling, use `is_active()`.
+
+```php
+if ( $this->example_process->is_active() ) {
+    // Do something because background process is active, e.g. add notice in admin UI.
+}
+```
+
+If a background process is not active, then it either has not had anything queued yet and not started, or has finished processing all queued items.
+
 ### BasicAuth
 
 If your site is behind BasicAuth, both async requests and background processes will fail to complete. This is because WP Background Processing relies on the [WordPress HTTP API](https://developer.wordpress.org/plugins/http-api/), which requires you to attach your BasicAuth credentials to requests. The easiest way to do this is using the following filter:
