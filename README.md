@@ -10,7 +10,7 @@ __Requires PHP 5.6+__
 
 The recommended way to install this library in your project is by loading it through Composer:
 
-```
+```shell
 composer require deliciousbrains/wp-background-processing
 ```
 
@@ -30,6 +30,11 @@ class WP_Example_Request extends WP_Async_Request {
 	/**
 	 * @var string
 	 */
+	protected $prefix = 'my_plugin';
+
+	/**
+	 * @var string
+	 */
 	protected $action = 'example_request';
 
 	/**
@@ -45,44 +50,61 @@ class WP_Example_Request extends WP_Async_Request {
 }
 ```
 
-##### `protected $action`
+#### `protected $prefix`
+
+Should be set to a unique prefix associated with your plugin, theme, or site's custom function prefix.
+
+#### `protected $action`
 
 Should be set to a unique name.
 
-##### `protected function handle()`
+#### `protected function handle()`
 
 Should contain any logic to perform during the non-blocking request. The data passed to the request will be accessible via `$_POST`.
 
-##### Dispatching Requests
+#### Dispatching Requests
 
 Instantiate your request:
 
-`$this->example_request = new WP_Example_Request();`
+```php
+$this->example_request = new WP_Example_Request();
+```
 
 Add data to the request if required:
 
-`$this->example_request->data( array( 'value1' => $value1, 'value2' => $value2 ) );`
+```php
+$this->example_request->data( array( 'value1' => $value1, 'value2' => $value2 ) );
+```
 
 Fire off the request:
 
-`$this->example_request->dispatch();`
+```php
+$this->example_request->dispatch();
+```
 
 Chaining is also supported:
 
-`$this->example_request->data( array( 'data' => $data ) )->dispatch();`
+```php
+$this->example_request->data( array( 'data' => $data ) )->dispatch();
+```
 
 ### Background Process
 
-Background processes work in a similar fashion to async requests, but they allow you to queue tasks. Items pushed onto the queue will be processed in the background once the queue has been dispatched. Queues will also scale based on available server resources, so higher end servers will process more items per batch. Once a batch has completed, the next batch will start instantly.
+Background processes work in a similar fashion to async requests, but they allow you to queue tasks. Items pushed onto the queue will be processed in the background once the queue has been saved and dispatched. Queues will also scale based on available server resources, so higher end servers will process more items per batch. Once a batch has completed, the next batch will start instantly.
 
 Health checks run by default every 5 minutes to ensure the queue is running when queued items exist. If the queue has failed it will be restarted.
 
-Queues work on a first in first out basis, which allows additional items to be pushed to the queue even if it’s already processing.
+Queues work on a first in first out basis, which allows additional items to be pushed to the queue even if it’s already processing. Saving a new batch of queued items and dispatching while another background processing instance is already running will result in the dispatch shortcutting out and the existing instance eventually picking up the new items and processing them when it is their turn.
 
 Extend the `WP_Background_Process` class:
 
 ```php
 class WP_Example_Process extends WP_Background_Process {
+
+	/**
+	 * @var string
+	 */
+	protected $prefix = 'my_plugin';
 
 	/**
 	 * @var string
@@ -122,23 +144,29 @@ class WP_Example_Process extends WP_Background_Process {
 }
 ```
 
-##### `protected $action`
+#### `protected $prefix`
+
+Should be set to a unique prefix associated with your plugin, theme, or site's custom function prefix.
+
+#### `protected $action`
 
 Should be set to a unique name.
 
-##### `protected function task( $item )`
+#### `protected function task( $item )`
 
 Should contain any logic to perform on the queued item. Return `false` to remove the item from the queue or return `$item` to push it back onto the queue for further processing. If the item has been modified and is pushed back onto the queue the current state will be saved before the batch is exited.
 
-##### `protected function complete()`
+#### `protected function complete()`
 
 Optionally contain any logic to perform once the queue has completed.
 
-##### Dispatching Processes
+#### Dispatching Processes
 
 Instantiate your process:
 
-`$this->example_process = new WP_Example_Process();`
+```php
+$this->example_process = new WP_Example_Process();
+```
 
 **Note:** You must instantiate your process unconditionally. All requests should do this, even if nothing is pushed to the queue.
 
@@ -152,7 +180,113 @@ foreach ( $items as $item ) {
 
 Save and dispatch the queue:
 
-`$this->example_process->save()->dispatch();`
+```php
+$this->example_process->save()->dispatch();
+```
+
+#### Background Process Status
+
+A background process can be queued, processing, paused, cancelled, or none of the above (not started or has completed).
+
+##### Queued
+
+To check whether a background process has queued items use `is_queued()`.
+
+```php
+if ( $this->example_process->is_queued() ) {
+    // Do something because background process has queued items, e.g. add notice in admin UI.
+}
+```
+
+##### Processing
+
+To check whether a background process is currently handling a queue of items use `is_processing()`.
+
+```php
+if ( $this->example_process->is_processing() ) {
+    // Do something because background process is running, e.g. add notice in admin UI.
+}
+```
+
+##### Paused
+
+You can pause a background process with `pause()`.
+
+```php
+$this->example_process->pause();
+```
+
+The currently processing batch will continue until it either completes or reaches the time or memory limit. At that point it'll unlock the process and either complete the batch if the queue is empty, or perform a dispatch that will result in the handler removing the healthcheck cron and firing a "paused" action.
+
+To check whether a background process is currently paused use `is_paused()`.
+
+```php
+if ( $this->example_process->is_paused() ) {
+    // Do something because background process is paused, e.g. add notice in admin UI.
+}
+```
+
+You can perform an action in response to background processing being paused by handling the "paused" action for the background process's identifier ($prefix + $action).
+
+```php
+add_action( 'my_plugin_example_process_paused', function() {
+    // Do something because background process is paused, e.g. add notice in admin UI.
+});
+```
+
+You can resume a background process with `resume()`.
+
+```php
+$this->example_process->resume();
+```
+
+You can perform an action in response to background processing being resumed by handling the "resumed" action for the background process's identifier ($prefix + $action).
+
+```php
+add_action( 'my_plugin_example_process_resumed', function() {
+    // Do something because background process is resumed, e.g. add notice in admin UI.
+});
+```
+
+##### Cancelled
+
+You can cancel a background process with `cancel()`.
+
+```php
+$this->example_process->cancel();
+```
+
+The currently processing batch will continue until it either completes or reaches the time or memory limit. At that point it'll unlock the process and either complete the batch if the queue is empty, or perform a dispatch that will result in the handler removing the healthcheck cron, deleting all batches of queued items and firing a "cancelled" action.
+
+To check whether a background process is currently cancelled use `is_cancelled()`.
+
+```php
+if ( $this->example_process->is_cancelled() ) {
+    // Do something because background process is cancelled, e.g. add notice in admin UI.
+}
+```
+
+You can perform an action in response to background processing being cancelled by handling the "cancelled" action for the background process's identifier ($prefix + $action).
+
+```php
+add_action( 'my_plugin_example_process_cancelled', function() {
+    // Do something because background process is paused, e.g. add notice in admin UI.
+});
+```
+
+The "cancelled" action fires once the queue has been cleared down and cancelled status removed. After which `is_cancelled()` will no longer be true as the background process is now dormant.
+
+##### Active
+
+To check whether a background process has queued items, is processing, is paused, or is cancelling, use `is_active()`.
+
+```php
+if ( $this->example_process->is_active() ) {
+    // Do something because background process is active, e.g. add notice in admin UI.
+}
+```
+
+If a background process is not active, then it either has not had anything queued yet and not started, or has finished processing all queued items.
 
 ### BasicAuth
 

@@ -36,15 +36,7 @@
 
 		<!-- TODO: Maybe fix -->
 		<exclude name="WordPress.WP.CronInterval.ChangeDetected"/>
-		<exclude name="WordPress.WP.AlternativeFunctions.rand_rand"/>
 		<exclude name="WordPress.DB.DirectDatabaseQuery.DirectQuery"/>
-
-		<!-- TODO: Should fix -->
-		<exclude name="WordPress.DB.PreparedSQL.InterpolatedNotPrepared"/>
-		<exclude name="PEAR.Functions.FunctionCallSignature.ContentAfterOpenBracket"/>
-		<exclude name="PEAR.Functions.FunctionCallSignature.MultipleArguments"/>
-		<exclude name="PEAR.Functions.FunctionCallSignature.CloseBracketLine"/>
-		<exclude name="Generic.Commenting.DocComment.SpacingAfter"/>
 	</rule>
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>

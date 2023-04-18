@@ -142,8 +142,8 @@ abstract class WP_Async_Request {
 			'timeout'   => 0.01,
 			'blocking'  => false,
 			'body'      => $this->data,
-			'cookies'   => $_COOKIE,
-			'sslverify' => apply_filters( 'https_local_ssl_verify', false ),
+			'cookies'   => $_COOKIE, // Passing cookies ensures request is performed as initiating user.
+			'sslverify' => apply_filters( 'https_local_ssl_verify', false ), // Local requests, fine to pass false.
 		);
 
 		/**
@@ -158,6 +158,8 @@ abstract class WP_Async_Request {
 	 * Maybe handle a dispatched request.
 	 *
 	 * Check for correct nonce and pass to handler.
+	 *
+	 * @return void|mixed
 	 */
 	public function maybe_handle() {
 		// Don't lock up other requests while processing.
@@ -167,7 +169,27 @@ abstract class WP_Async_Request {
 
 		$this->handle();
 
-		wp_die();
+		return $this->maybe_wp_die();
+	}
+
+	/**
+	 * Should the process exit with wp_die?
+	 *
+	 * @param mixed $return What to return if filter says don't die, default is null.
+	 *
+	 * @return void|mixed
+	 */
+	protected function maybe_wp_die( $return = null ) {
+		/**
+		 * Should wp_die be used?
+		 *
+		 * @return bool
+		 */
+		if ( apply_filters( $this->identifier . '_wp_die', true ) ) {
+			wp_die();
+		}
+
+		return $return;
 	}
 
 	/**
