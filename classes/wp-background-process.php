@@ -257,13 +257,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * @return bool
 	 */
 	public function is_queued() {
-		$batch = $this->get_batch();
-
-		if ( empty( $batch ) ) {
-			return false;
-		}
-
-		return true;
+		return ! $this->is_queue_empty();
 	}
 
 	/**
@@ -349,27 +343,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * @return bool
 	 */
 	protected function is_queue_empty() {
-		global $wpdb;
-
-		$table  = $wpdb->options;
-		$column = 'option_name';
-
-		if ( is_multisite() ) {
-			$table  = $wpdb->sitemeta;
-			$column = 'meta_key';
-		}
-
-		$key = $wpdb->esc_like( $this->identifier . '_batch_' ) . '%';
-
-		$sql = '
-			SELECT COUNT(*)
-			FROM ' . $table . '
-			WHERE ' . $column . ' LIKE %s
-		';
-
-		$count = $wpdb->get_var( $wpdb->prepare( $sql, $key ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-
-		return ! ( $count > 0 );
+		return empty( $this->get_batch() );
 	}
 
 	/**
