@@ -186,7 +186,17 @@ $this->example_process->save()->dispatch();
 
 #### Background Process Status
 
-A background process can be processing, paused, cancelled, or none of the above (not started or has completed).
+A background process can be queued, processing, paused, cancelled, or none of the above (not started or has completed).
+
+##### Queued
+
+To check whether a background process has queued items use `is_queued()`.
+
+```php
+if ( $this->example_process->is_queued() ) {
+    // Do something because background process has queued items, e.g. add notice in admin UI.
+}
+```
 
 ##### Processing
 

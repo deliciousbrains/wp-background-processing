@@ -499,4 +499,26 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->assertCount( 0, $this->wpbp->get_batches() );
 		$this->assertFalse( $this->wpbp->is_processing(), 'not left processing on complete' );
 	}
+
+	/**
+	 * Test is_queued.
+	 *
+	 * @return void
+	 */
+	public function test_is_queued() {
+		$this->assertFalse( $this->wpbp->is_queued(), 'nothing queued until save' );
+
+		$this->wpbp->push_to_queue( 'wibble' );
+		$this->assertFalse( $this->wpbp->is_queued(), 'nothing queued until save' );
+
+		$this->wpbp->save();
+		$this->assertTrue( $this->wpbp->is_queued(), 'queued items exist' );
+
+		$this->wpbp->push_to_queue( 'wobble' );
+		$this->wpbp->save();
+		$this->assertTrue( $this->wpbp->is_queued(), 'queued items exist' );
+
+		$this->wpbp->delete_all();
+		$this->assertFalse( $this->wpbp->is_queued(), 'queue emptied' );
+	}
 }

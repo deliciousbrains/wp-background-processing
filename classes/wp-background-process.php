@@ -252,6 +252,21 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	}
 
 	/**
+	 * Is queued?
+	 *
+	 * @return bool
+	 */
+	public function is_queued() {
+		$batch = $this->get_batch();
+
+		if ( empty( $batch ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Generate key for a batch.
 	 *
 	 * Generates a unique key based on microtime. Queue items are
