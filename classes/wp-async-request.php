@@ -86,10 +86,11 @@ abstract class WP_Async_Request {
 	}
 
 	/**
- 	 * Persist non-blocking request args
-   	 * 
-     	 * @return array
-       	 */
+	 * Persist non-blocking request args.
+	 *
+	 * @param array $request_args Post request params.
+	 * @return array
+	 */
 	public function persist_request_args( $request_args ) {
 		$args = $this->get_post_args();
 		if ( isset( $args['timeout'] ) ) {
