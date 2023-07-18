@@ -527,8 +527,8 @@ abstract class WP_Background_Process extends WP_Async_Request {
 				// Let the server breathe a little.
 				sleep( $throttle_seconds );
 
-				if ( $this->time_exceeded() || $this->memory_exceeded() ) {
-					// Batch limits reached.
+				// Batch limits reached, or pause or cancel request.
+				if ( $this->time_exceeded() || $this->memory_exceeded() || $this->is_paused() || $this->is_cancelled() ) {
 					break;
 				}
 			}
@@ -537,7 +537,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 			if ( empty( $batch->data ) ) {
 				$this->delete( $batch->key );
 			}
-		} while ( ! $this->time_exceeded() && ! $this->memory_exceeded() && ! $this->is_queue_empty() );
+		} while ( ! $this->time_exceeded() && ! $this->memory_exceeded() && ! $this->is_queue_empty() && ! $this->is_paused() && ! $this->is_cancelled() );
 
 		$this->unlock_process();
 
