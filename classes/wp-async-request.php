@@ -5,6 +5,11 @@
  * @package WP-Background-Processing
  */
 
+// phpcs:disable Generic.Commenting.DocComment.MissingShort
+/** @noinspection PhpIllegalPsrClassPathInspection */
+/** @noinspection AutoloadingIssuesInspection */
+// phpcs:disable Generic.Commenting.DocComment.MissingShort
+
 /**
  * Abstract WP_Async_Request class.
  *
@@ -178,6 +183,7 @@ abstract class WP_Async_Request {
 	 * @param mixed $return What to return if filter says don't die, default is null.
 	 *
 	 * @return void|mixed
+	 * @noinspection ForgottenDebugOutputInspection
 	 */
 	protected function maybe_wp_die( $return = null ) {
 		/**
