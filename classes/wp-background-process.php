@@ -604,7 +604,10 @@ abstract class WP_Background_Process extends WP_Async_Request {
 		$finish = $this->start_time + apply_filters( $this->identifier . '_default_time_limit', 20 ); // 20 seconds
 		$return = false;
 
-		if ( time() >= $finish ) {
+		if (
+			! ( defined( 'WP_CLI' ) && WP_CLI ) &&
+			time() >= $finish
+		) {
 			$return = true;
 		}
 
