@@ -81,9 +81,27 @@ abstract class WP_Async_Request {
 	public function dispatch() {
 		$url  = add_query_arg( $this->get_query_args(), $this->get_query_url() );
 		$args = $this->get_post_args();
-
+		add_filter( 'http_request_args', array( $this, 'persist_request_args' ), 99 );
 		return wp_remote_post( esc_url_raw( $url ), $args );
 	}
+
+	/**
+	 * Persist non-blocking request args.
+	 *
+	 * @param array $request_args Post request params.
+	 * @return array
+	 */
+	public function persist_request_args( $request_args ) {
+		$args = $this->get_post_args();
+		if ( isset( $args['timeout'] ) ) {
+			$request_args['timeout'] = $args['timeout'];
+		}
+		if ( isset( $args['blocking'] ) ) {
+			$request_args['blocking'] = $args['blocking'];
+		}
+		return $request_args;
+	}
+
 
 	/**
 	 * Get query args.
