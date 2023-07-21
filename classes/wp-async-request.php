@@ -94,7 +94,7 @@ abstract class WP_Async_Request {
 	public function persist_request_args( $request_args ) {
 		$args = $this->get_post_args();
 		if ( isset( $args['timeout'] ) ) {
-			$request_args['timeout'] = $args;
+			$request_args['timeout'] = $args['timeout'];
 		}
 		if ( isset( $args['blocking'] ) ) {
 			$request_args['blocking'] = $args['blocking'];
