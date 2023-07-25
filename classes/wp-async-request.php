@@ -165,7 +165,23 @@ abstract class WP_Async_Request {
 		// Don't lock up other requests while processing.
 		session_write_close();
 
-		check_ajax_referer( $this->identifier, 'nonce' );
+		$nonce_check = check_ajax_referer( $this->identifier, 'nonce' );
+		/**
+		 * Allow overriding the nonce check for ajax calls
+		 *
+		 * @param bool $nonce_check
+		 * @param string $action
+		 * @param string $identifier
+		 * @return bool
+		 */
+		$nonce_check = apply_filters( 'wpbp_nonce_check_override', $nonce_check, $this->action, $this->identifier );
+		if( ! $nonce_check ) {
+			if ( wp_doing_ajax() ) {
+				wp_die( -1, 403 );
+			} else {
+				die( '-1' );
+			}
+		}
 
 		$this->handle();
 
