@@ -371,6 +371,16 @@ make
 
 If the `composer` dependencies aren't in place, they'll be automatically installed first.
 
+#### Creating a PR
+
+When creating a PR, please make sure to mention which GitHub issue is being resolved
+at the top of the description, e.g.:
+
+`Resolves #123`
+
+The unit and style tests will be run automatically, the PR will not be eligible for
+merge unless they pass, and the branch is up-to-date with `master`.
+
 ## License
 
 [GPLv2+](http://www.gnu.org/licenses/gpl-2.0.html)
