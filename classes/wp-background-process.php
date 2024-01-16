@@ -5,11 +5,6 @@
  * @package WP-Background-Processing
  */
 
-// phpcs:disable Generic.Commenting.DocComment.MissingShort
-/** @noinspection PhpIllegalPsrClassPathInspection */
-/** @noinspection AutoloadingIssuesInspection */
-// phpcs:disable Generic.Commenting.DocComment.MissingShort
-
 /**
  * Abstract WP_Background_Process class.
  *
@@ -78,7 +73,6 @@ abstract class WP_Background_Process extends WP_Async_Request {
 		$this->cron_interval_identifier = $this->identifier . '_cron_interval';
 
 		add_action( $this->cron_hook_identifier, array( $this, 'handle_cron_healthcheck' ) );
-		// phpcs:ignore WordPress.WP.CronInterval.ChangeDetected
 		add_filter( 'cron_schedules', array( $this, 'schedule_cron_healthcheck' ) );
 	}
 
@@ -339,7 +333,6 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * Is queue empty?
 	 *
 	 * @return bool
-	 * @noinspection IsEmptyFunctionUsageInspection
 	 */
 	protected function is_queue_empty() {
 		return empty( $this->get_batch() );
@@ -355,7 +348,6 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 *
 	 * @deprecated 1.1.0 Superseded.
 	 * @see        is_processing()
-	 * @noinspection PhpUnused
 	 */
 	protected function is_process_running() {
 		return $this->is_processing();
@@ -487,8 +479,6 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 *
 	 * Pass each queue item to the task handler, while remaining
 	 * within server memory and time limit constraints.
-	 *
-	 * @noinspection DisconnectedForeachInstructionInspection
 	 */
 	protected function handle() {
 		$this->lock_process();
@@ -714,7 +704,6 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 *
 	 * @deprecated 1.1.0 Superseded.
 	 * @see        cancel()
-	 * @noinspection PhpUnused
 	 */
 	public function cancel_process() {
 		$this->cancel();
