@@ -443,7 +443,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 			SELECT *
 			FROM ' . $table . '
 			WHERE ' . $column . ' LIKE %s
-			ORDER BY ' . $key_column . '
+			ORDER BY ' . $key_column . ' ASC
 			';
 
 		$args = array( $key );
