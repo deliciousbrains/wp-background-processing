@@ -14,7 +14,7 @@ The recommended way to install this library in your project is by loading it thr
 composer require deliciousbrains/wp-background-processing
 ```
 
-It is highly recommended to prefix wrap the library class files using [the Mozart package](https://packagist.org/packages/coenjacobs/mozart), to prevent collisions with other projects using this same library.
+It is highly recommended to prefix wrap the library class files using [PHP-Scoper](https://packagist.org/packages/humbug/php-scoper), to prevent collisions with other projects using this same library.
 
 ## Usage
 
@@ -25,6 +25,8 @@ Async requests are useful for pushing slow one-off tasks such as sending emails 
 Extend the `WP_Async_Request` class:
 
 ```php
+use My_Plugin\PHP_Scoped\Namespace\WP_Background_Processing;
+
 class WP_Example_Request extends WP_Async_Request {
 
 	/**
@@ -99,6 +101,8 @@ Queues work on a first in first out basis, which allows additional items to be p
 Extend the `WP_Background_Process` class:
 
 ```php
+use My_Plugin\PHP_Scoped\Namespace\WP_Background_Processing;
+
 class WP_Example_Process extends WP_Background_Process {
 
 	/**

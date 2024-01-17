@@ -5,6 +5,11 @@
  * @package WP-Background-Processing
  */
 
+namespace WP_Background_Processing;
+
+use stdClass;
+use WP_Error;
+
 /**
  * Abstract WP_Background_Process class.
  *

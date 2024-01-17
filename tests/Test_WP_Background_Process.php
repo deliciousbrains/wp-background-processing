@@ -6,6 +6,7 @@
  */
 
 use PHPUnit\Framework\MockObject\MockObject;
+use WP_Background_Processing\WP_Background_Process;
 
 /**
  * Class Test_WP_Background_Process
@@ -42,7 +43,7 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 	 */
 	private function getWPBPProperty( string $name ) {
 		try {
-			$property = new ReflectionProperty( 'WP_Background_Process', $name );
+			$property = new ReflectionProperty( 'WP_Background_Processing\WP_Background_Process', $name );
 		} catch ( Exception $e ) {
 			return new WP_Error( $e->getCode(), $e->getMessage() );
 		}
@@ -61,7 +62,7 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 	 */
 	private function executeWPBPMethod( string $name, ...$args ) {
 		try {
-			$method = new ReflectionMethod( 'WP_Background_Process', $name );
+			$method = new ReflectionMethod( 'WP_Background_Processing\WP_Background_Process', $name );
 			$method->setAccessible( true );
 
 			return $method->invoke( $this->wpbp, ...$args );
@@ -76,7 +77,7 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function test_push_to_queue() {
-		$this->assertClassHasAttribute( 'data', 'WP_Background_Process', 'class has data property' );
+		$this->assertClassHasAttribute( 'data', 'WP_Background_Processing\WP_Background_Process', 'class has data property' );
 		$this->assertEmpty( $this->getWPBPProperty( 'data' ) );
 
 		$this->wpbp->push_to_queue( 'wibble' );
@@ -93,7 +94,7 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function test_save() {
-		$this->assertClassHasAttribute( 'data', 'WP_Background_Process', 'class has data property' );
+		$this->assertClassHasAttribute( 'data', 'WP_Background_Processing\WP_Background_Process', 'class has data property' );
 		$this->assertEmpty( $this->getWPBPProperty( 'data' ) );
 		$this->assertEmpty( $this->wpbp->get_batches(), 'no batches until save' );
 
