@@ -139,7 +139,7 @@ abstract class WP_Async_Request {
 		}
 
 		$args = array(
-			'timeout'   => 0.01,
+			'timeout'   => 5,
 			'blocking'  => false,
 			'body'      => $this->data,
 			'cookies'   => $_COOKIE, // Passing cookies ensures request is performed as initiating user.
