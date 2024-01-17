@@ -7,8 +7,6 @@
 
 namespace WP_Background_Processing;
 
-use WP_Error;
-
 /**
  * Abstract WP_Async_Request class.
  *
