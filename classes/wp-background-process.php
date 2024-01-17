@@ -190,11 +190,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	public function is_cancelled() {
 		$status = get_site_option( $this->get_status_key(), 0 );
 
-		if ( absint( $status ) === self::STATUS_CANCELLED ) {
-			return true;
-		}
-
-		return false;
+		return absint( $status ) === self::STATUS_CANCELLED;
 	}
 
 	/**
@@ -219,11 +215,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	public function is_paused() {
 		$status = get_site_option( $this->get_status_key(), 0 );
 
-		if ( absint( $status ) === self::STATUS_PAUSED ) {
-			return true;
-		}
-
-		return false;
+		return absint( $status ) === self::STATUS_PAUSED;
 	}
 
 	/**
@@ -412,7 +404,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	protected function get_batch() {
 		return array_reduce(
 			$this->get_batches( 1 ),
-			function ( $carry, $batch ) {
+			static function ( $carry, $batch ) {
 				return $batch;
 			},
 			array()
@@ -468,7 +460,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 
 		if ( ! empty( $items ) ) {
 			$batches = array_map(
-				function ( $item ) use ( $column, $value_column ) {
+				static function ( $item ) use ( $column, $value_column ) {
 					$batch       = new stdClass();
 					$batch->key  = $item->{$column};
 					$batch->data = maybe_unserialize( $item->{$value_column} );
