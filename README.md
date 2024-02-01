@@ -178,10 +178,62 @@ foreach ( $items as $item ) {
 }
 ```
 
+An item can be any valid PHP value, string, integer, array or object. If needed, the $item is serialized when written to the database.
+
 Save and dispatch the queue:
 
 ```php
 $this->example_process->save()->dispatch();
+```
+
+#### Handling serialized objects in queue items
+
+Queue items that contain non-scalar values are serialized when stored in the database. To avoid potential security issues during unserialize, this library provides the option to set the `allowed_classes` option when calling `unserialize()` which limits which classes can be instantiated. It's kept internally as the protected `$allowed_batch_data_classes` property.
+
+To maintain backward compatibility the default value is `true`, meaning that any serialized object will be instantiated. Please note that this default behavior may change in a future major release.
+
+We encourage all users of this library to take advantage of setting a strict value for `$allowed_batch_data_classes`. If possible, set the value to `false` to disallow any objects from being instantiated, or a very limited list of class names, see examples below.
+
+Objects in the serialized string that are not allowed to be instantiated will instead get the class type `__PHP_Incomplete_Class`.
+
+##### Overriding the default `$allowed_batch_data_classes`
+
+The default behavior can be overridden by passing an array of allowed classes to the constructor:
+
+``` php
+$allowed_batch_data_classes = array( MyCustomItem::class, MyItemHelper::class );
+$this->example_process = new WP_Example_Process( $allowed_batch_data_classes );
+```
+
+Or, set the value to `false`:
+
+``` php
+$this->example_process = new WP_Example_Process( false );
+```
+
+
+Another way to change the default is to override the `$allowed_batch_data_classes` property in your process class:
+
+``` php
+class WP_Example_Process extends WP_Background_Process {
+
+	/**
+	 * @var string
+	 */
+	protected $prefix = 'my_plugin';
+
+	/**
+	 * @var string
+	 */
+	protected $action = 'example_process';
+
+	/**
+	 *
+	 * @var bool|array
+	 */
+	protected $allowed_batch_data_classes = array( MyCustomItem::class, MyItemHelper::class );
+	...
+
 ```
 
 #### Background Process Status
