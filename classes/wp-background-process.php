@@ -86,7 +86,11 @@ abstract class WP_Background_Process extends WP_Async_Request {
 			$allowed_batch_data_classes = true;
 		}
 
-		$this->allowed_batch_data_classes = $allowed_batch_data_classes;
+		// If allowed_batch_data_classes property set in subclass,
+		// only apply override if not allowing any class.
+		if ( true === $this->allowed_batch_data_classes || true !== $allowed_batch_data_classes ) {
+			$this->allowed_batch_data_classes = $allowed_batch_data_classes;
+		}
 
 		$this->cron_hook_identifier     = $this->identifier . '_cron';
 		$this->cron_interval_identifier = $this->identifier . '_cron_interval';
