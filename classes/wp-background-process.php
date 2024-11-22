@@ -211,9 +211,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * @return bool
 	 */
 	public function is_cancelled() {
-		$status = get_site_option( $this->get_status_key(), 0 );
-
-		return absint( $status ) === self::STATUS_CANCELLED;
+		return $this->get_status() === self::STATUS_CANCELLED;
 	}
 
 	/**
@@ -231,14 +229,12 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	}
 
 	/**
-	 * Is the job paused?
+	 * Has the process been paused?
 	 *
 	 * @return bool
 	 */
 	public function is_paused() {
-		$status = get_site_option( $this->get_status_key(), 0 );
-
-		return absint( $status ) === self::STATUS_PAUSED;
+		return $this->get_status() === self::STATUS_PAUSED;
 	}
 
 	/**
@@ -309,6 +305,34 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 */
 	protected function get_status_key() {
 		return $this->identifier . '_status';
+	}
+
+	/**
+	 * Get the status value for the process.
+	 *
+	 * @return int
+	 */
+	protected function get_status() {
+		global $wpdb;
+
+		if ( is_multisite() ) {
+			$status = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT meta_value FROM $wpdb->sitemeta WHERE meta_key = %s AND site_id = %d LIMIT 1",
+					$this->get_status_key(),
+					get_current_network_id()
+				)
+			);
+		} else {
+			$status = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT option_value FROM $wpdb->options WHERE option_name = %s LIMIT 1",
+					$this->get_status_key()
+				)
+			);
+		}
+
+		return absint( $status );
 	}
 
 	/**
@@ -477,7 +501,10 @@ abstract class WP_Background_Process extends WP_Async_Request {
 			$args[] = $limit;
 		}
 
-		$items = $wpdb->get_results( $wpdb->prepare( $sql, $args ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$items = $wpdb->get_results( $wpdb->prepare(
+			$sql,
+			$args
+		) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
 		$batches = array();
 
@@ -722,7 +749,11 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 */
 	protected function schedule_event() {
 		if ( ! wp_next_scheduled( $this->cron_hook_identifier ) ) {
-			wp_schedule_event( time() + ( $this->get_cron_interval() * MINUTE_IN_SECONDS ), $this->cron_interval_identifier, $this->cron_hook_identifier );
+			wp_schedule_event(
+				time() + ( $this->get_cron_interval() * MINUTE_IN_SECONDS ),
+				$this->cron_interval_identifier,
+				$this->cron_hook_identifier
+			);
 		}
 	}
 
