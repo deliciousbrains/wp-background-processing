@@ -345,11 +345,14 @@ abstract class WP_Background_Process extends WP_Async_Request {
 		// Don't lock up other requests while processing.
 		session_write_close();
 
+		check_ajax_referer( $this->identifier, 'nonce' );
+
+		// Background process already running.
 		if ( $this->is_processing() ) {
-			// Background process already running.
 			return $this->maybe_wp_die();
 		}
 
+		// Cancel requested.
 		if ( $this->is_cancelled() ) {
 			$this->clear_scheduled_event();
 			$this->delete_all();
@@ -357,6 +360,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 			return $this->maybe_wp_die();
 		}
 
+		// Pause requested.
 		if ( $this->is_paused() ) {
 			$this->clear_scheduled_event();
 			$this->paused();
@@ -364,12 +368,10 @@ abstract class WP_Background_Process extends WP_Async_Request {
 			return $this->maybe_wp_die();
 		}
 
+		// No data to process.
 		if ( $this->is_queue_empty() ) {
-			// No data to process.
 			return $this->maybe_wp_die();
 		}
-
-		check_ajax_referer( $this->identifier, 'nonce' );
 
 		$this->handle();
 
