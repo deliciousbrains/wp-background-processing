@@ -12,6 +12,17 @@
  * @extends WP_Async_Request
  */
 abstract class WP_Background_Process extends WP_Async_Request {
+	/**
+	 * The default query arg name used for passing the chain ID to new processes.
+	 */
+	const CHAIN_ID_ARG_NAME = 'chain_id';
+
+	/**
+	 * Unique background process chain ID.
+	 *
+	 * @var string
+	 */
+	private $chain_id;
 
 	/**
 	 * Action
@@ -97,6 +108,9 @@ abstract class WP_Background_Process extends WP_Async_Request {
 
 		add_action( $this->cron_hook_identifier, array( $this, 'handle_cron_healthcheck' ) );
 		add_filter( 'cron_schedules', array( $this, 'schedule_cron_healthcheck' ) );
+
+		// Ensure dispatch query args included extra data.
+		add_filter( $this->identifier . '_query_args', array( $this, 'filter_dispatch_query_args' ) );
 	}
 
 	/**
@@ -108,6 +122,18 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	public function dispatch() {
 		if ( $this->is_processing() ) {
 			// Process already running.
+			return false;
+		}
+
+		/**
+		 * Filter fired before background process dispatches its next process.
+		 *
+		 * @param bool   $cancel   Should the dispatch be cancelled? Default false.
+		 * @param string $chain_id The background process chain ID.
+		 */
+		$cancel = apply_filters( $this->identifier . '_pre_dispatch', false, $this->get_chain_id() );
+
+		if ( $cancel ) {
 			return false;
 		}
 
@@ -422,14 +448,38 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * Lock the process so that multiple instances can't run simultaneously.
 	 * Override if applicable, but the duration should be greater than that
 	 * defined in the time_exceeded() method.
+	 *
+	 * @param bool $reset_start_time Optional, default true.
 	 */
-	protected function lock_process() {
-		$this->start_time = time(); // Set start time of current process.
+	public function lock_process( $reset_start_time = true ) {
+		if ( $reset_start_time ) {
+			$this->start_time = time(); // Set start time of current process.
+		}
 
 		$lock_duration = ( property_exists( $this, 'queue_lock_time' ) ) ? $this->queue_lock_time : 60; // 1 minute
 		$lock_duration = apply_filters( $this->identifier . '_queue_lock_time', $lock_duration );
 
-		set_site_transient( $this->identifier . '_process_lock', microtime(), $lock_duration );
+		$microtime = microtime();
+		$locked    = set_site_transient( $this->identifier . '_process_lock', $microtime, $lock_duration );
+
+		/**
+		 * Action to note whether the background process managed to create its lock.
+		 *
+		 * The lock is used to signify that a process is running a task and no other
+		 * process should be allowed to run the same task until the lock is released.
+		 *
+		 * @param bool   $locked        Whether the lock was successfully created.
+		 * @param string $microtime     Microtime string value used for the lock.
+		 * @param int    $lock_duration Max number of seconds that the lock will live for.
+		 * @param string $chain_id      Current background process chain ID.
+		 */
+		do_action(
+			$this->identifier . '_process_locked',
+			$locked,
+			$microtime,
+			$lock_duration,
+			$this->get_chain_id()
+		);
 	}
 
 	/**
@@ -440,7 +490,18 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * @return $this
 	 */
 	protected function unlock_process() {
-		delete_site_transient( $this->identifier . '_process_lock' );
+		$unlocked = delete_site_transient( $this->identifier . '_process_lock' );
+
+		/**
+		 * Action to note whether the background process managed to release its lock.
+		 *
+		 * The lock is used to signify that a process is running a task and no other
+		 * process should be allowed to run the same task until the lock is released.
+		 *
+		 * @param bool   $unlocked Whether the lock was released.
+		 * @param string $chain_id Current background process chain ID.
+		 */
+		do_action( $this->identifier . '_process_unlocked', $unlocked, $this->get_chain_id() );
 
 		return $this;
 	}
@@ -573,8 +634,8 @@ abstract class WP_Background_Process extends WP_Async_Request {
 				// Let the server breathe a little.
 				sleep( $throttle_seconds );
 
-				// Batch limits reached, or pause or cancel request.
-				if ( $this->time_exceeded() || $this->memory_exceeded() || $this->is_paused() || $this->is_cancelled() ) {
+				// Batch limits reached, or pause or cancel requested.
+				if ( ! $this->should_continue() ) {
 					break;
 				}
 			}
@@ -583,7 +644,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 			if ( empty( $batch->data ) ) {
 				$this->delete( $batch->key );
 			}
-		} while ( ! $this->time_exceeded() && ! $this->memory_exceeded() && ! $this->is_queue_empty() && ! $this->is_paused() && ! $this->is_cancelled() );
+		} while ( ! $this->is_queue_empty() && $this->should_continue() );
 
 		$this->unlock_process();
 
@@ -815,5 +876,149 @@ abstract class WP_Background_Process extends WP_Async_Request {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Should any processing continue?
+	 *
+	 * @return bool
+	 */
+	public function should_continue() {
+		/**
+		 * Filter whether the current background process should continue running the task
+		 * if there is data to be processed.
+		 *
+		 * If the processing time or memory limits have been exceeded, the value will be false.
+		 * If pause or cancel have been requested, the value will be false.
+		 *
+		 * It is very unlikely that you would want to override a false value with true.
+		 *
+		 * If false is returned here, it does not necessarily mean background processing is
+		 * complete. If there is batch data still to be processed and pause or cancel have not
+		 * been requested, it simply means this background process should spawn a new process
+		 * for the chain to continue processing and then close itself down.
+		 *
+		 * @param bool   $continue Should the current process continue processing the task?
+		 * @param string $chain_id The current background process chain's ID.
+		 *
+		 * @return bool
+		 */
+		return apply_filters(
+			$this->identifier . '_should_continue',
+			! ( $this->time_exceeded() || $this->memory_exceeded() || $this->is_paused() || $this->is_cancelled() ),
+			$this->get_chain_id()
+		);
+	}
+
+	/**
+	 * Get the string used to identify this type of background process.
+	 *
+	 * @return string
+	 */
+	public function get_identifier() {
+		return $this->identifier;
+	}
+
+	/**
+	 * Generates a unique background process chain ID.
+	 *
+	 * Basically a UUIDv4 to identify the current background process chain
+	 * so that if another chain is started for the same background process type
+	 * you can control them individually, i.e. shutdown the old chain.
+	 *
+	 * @return string
+	 */
+	private static function generate_chain_id() {
+		return sprintf(
+			'%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+
+			// 32 bits for "time_low".
+			mt_rand( 0, 0xffff ),
+			mt_rand( 0, 0xffff ),
+
+			// 16 bits for "time_mid".
+			mt_rand( 0, 0xffff ),
+
+			// 16 bits for "time_hi_and_version",
+			// four most significant bits holds version number 4.
+			mt_rand( 0, 0x0fff ) | 0x4000,
+
+			// 16 bits, 8 bits for "clk_seq_hi_res",
+			// 8 bits for "clk_seq_low",
+			// two most significant bits holds zero and one for variant DCE1.1.
+			mt_rand( 0, 0x3fff ) | 0x8000,
+
+			// 48 bits for "node"
+			mt_rand( 0, 0xffff ),
+			mt_rand( 0, 0xffff ),
+			mt_rand( 0, 0xffff )
+		);
+	}
+
+	/**
+	 * Return the current background process chain's ID.
+	 *
+	 * If the chain's ID hasn't been set before this function is first used,
+	 * and hasn't been passed as a query arg during dispatch,
+	 * the chain ID will be generated before being returned.
+	 *
+	 * @return string
+	 */
+	public function get_chain_id() {
+		if ( empty( $this->chain_id ) && ! empty( $_GET[ $this->get_chain_id_arg_name() ] ) ) {
+			$this->chain_id = $_GET[ $this->get_chain_id_arg_name() ];
+
+			return $this->chain_id;
+		}
+
+		if ( empty( $this->chain_id ) ) {
+			$this->chain_id = self::generate_chain_id();
+		}
+
+		return $this->chain_id;
+	}
+
+	/**
+	 * Filters the query arguments used during an async request.
+	 *
+	 * @param array $args
+	 *
+	 * @return array
+	 */
+	public function filter_dispatch_query_args( $args ) {
+		$args[ $this->get_chain_id_arg_name() ] = $this->get_chain_id();
+
+		return $args;
+	}
+
+	/**
+	 * Get the query arg name used for passing the chain ID to new processes.
+	 *
+	 * @return string
+	 */
+	private function get_chain_id_arg_name() {
+		static $chain_id_arg_name;
+
+		if ( ! empty( $chain_id_arg_name ) ) {
+			return $chain_id_arg_name;
+		}
+
+		/**
+		 * Filter the query arg name used for passing the chain ID to new processes.
+		 *
+		 * If you encounter problems with using the default query arg name, you can
+		 * change it with this filter.
+		 *
+		 * @param string $chain_id_arg_name Default "chain_id".
+		 *
+		 * @return string
+		 */
+		$chain_id_arg_name = apply_filters( $this->identifier . '_chain_id_arg_name', self::CHAIN_ID_ARG_NAME );
+
+		if ( ! is_string( $chain_id_arg_name ) || empty( $chain_id_arg_name ) ) {
+			$chain_id_arg_name = self::CHAIN_ID_ARG_NAME;
+		}
+
+		return $chain_id_arg_name;
 	}
 }
