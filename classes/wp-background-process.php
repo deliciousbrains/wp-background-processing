@@ -564,10 +564,12 @@ abstract class WP_Background_Process extends WP_Async_Request {
 			$args[] = $limit;
 		}
 
-		$items = $wpdb->get_results( $wpdb->prepare(
-			$sql,
-			$args
-		) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$items = $wpdb->get_results(
+			$wpdb->prepare(
+				$sql, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$args
+			)
+		);
 
 		$batches = array();
 
@@ -920,42 +922,6 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	}
 
 	/**
-	 * Generates a unique background process chain ID.
-	 *
-	 * Basically a UUIDv4 to identify the current background process chain
-	 * so that if another chain is started for the same background process type
-	 * you can control them individually, i.e. shutdown the old chain.
-	 *
-	 * @return string
-	 */
-	private static function generate_chain_id() {
-		return sprintf(
-			'%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-
-			// 32 bits for "time_low".
-			mt_rand( 0, 0xffff ),
-			mt_rand( 0, 0xffff ),
-
-			// 16 bits for "time_mid".
-			mt_rand( 0, 0xffff ),
-
-			// 16 bits for "time_hi_and_version",
-			// four most significant bits holds version number 4.
-			mt_rand( 0, 0x0fff ) | 0x4000,
-
-			// 16 bits, 8 bits for "clk_seq_hi_res",
-			// 8 bits for "clk_seq_low",
-			// two most significant bits holds zero and one for variant DCE1.1.
-			mt_rand( 0, 0x3fff ) | 0x8000,
-
-			// 48 bits for "node"
-			mt_rand( 0, 0xffff ),
-			mt_rand( 0, 0xffff ),
-			mt_rand( 0, 0xffff )
-		);
-	}
-
-	/**
 	 * Return the current background process chain's ID.
 	 *
 	 * If the chain's ID hasn't been set before this function is first used,
@@ -965,14 +931,22 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * @return string
 	 */
 	public function get_chain_id() {
-		if ( empty( $this->chain_id ) && ! empty( $_GET[ $this->get_chain_id_arg_name() ] ) ) {
-			$this->chain_id = $_GET[ $this->get_chain_id_arg_name() ];
+		if ( empty( $this->chain_id ) && wp_doing_ajax() ) {
+			check_ajax_referer( $this->identifier, 'nonce' );
 
-			return $this->chain_id;
+			if ( ! empty( $_GET[ $this->get_chain_id_arg_name() ] ) ) {
+				$chain_id = sanitize_key( $_GET[ $this->get_chain_id_arg_name() ] );
+
+				if ( wp_is_uuid( $chain_id ) ) {
+					$this->chain_id = $chain_id;
+
+					return $this->chain_id;
+				}
+			}
 		}
 
 		if ( empty( $this->chain_id ) ) {
-			$this->chain_id = self::generate_chain_id();
+			$this->chain_id = wp_generate_uuid4();
 		}
 
 		return $this->chain_id;
@@ -981,7 +955,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	/**
 	 * Filters the query arguments used during an async request.
 	 *
-	 * @param array $args
+	 * @param array $args Current query args.
 	 *
 	 * @return array
 	 */
