@@ -244,7 +244,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * Called when background process has been cancelled.
 	 */
 	protected function cancelled() {
-		do_action( $this->identifier . '_cancelled' );
+		do_action( $this->identifier . '_cancelled', $this->get_chain_id() );
 	}
 
 	/**
@@ -267,7 +267,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * Called when background process has been paused.
 	 */
 	protected function paused() {
-		do_action( $this->identifier . '_paused' );
+		do_action( $this->identifier . '_paused', $this->get_chain_id() );
 	}
 
 	/**
@@ -285,7 +285,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * Called when background process has been resumed.
 	 */
 	protected function resumed() {
-		do_action( $this->identifier . '_resumed' );
+		do_action( $this->identifier . '_resumed', $this->get_chain_id() );
 	}
 
 	/**
@@ -739,7 +739,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * Called when background process has completed.
 	 */
 	protected function completed() {
-		do_action( $this->identifier . '_completed' );
+		do_action( $this->identifier . '_completed', $this->get_chain_id() );
 	}
 
 	/**
