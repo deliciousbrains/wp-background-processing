@@ -15,4 +15,4 @@ vendor: composer.json
 .PHONY: clean
 clean:
 	rm -rf vendor
-	rm -f tests/.phpunit.result.cache
+	rm -f tests/.phpunit.result.cache .phpunit.result.cache
