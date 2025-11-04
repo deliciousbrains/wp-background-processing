@@ -24,6 +24,14 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 */
 	private $chain_id;
 
+    /**
+     * Whether the background process is switched to process
+     * a batch from another blog in the multisite
+     *
+     * @var bool
+     */
+    private $switched_to_blog = false;
+
 	/**
 	 * Action
 	 *
@@ -66,6 +74,13 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 * @var bool|array
 	 */
 	protected $allowed_batch_data_classes = true;
+
+    /**
+     * Amount of seconds to sleep() between batches
+     *
+     * @var int
+     */
+    protected $seconds_between_batches = 0;
 
 	/**
 	 * The status set when process is cancelling.
@@ -319,7 +334,14 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 */
 	protected function generate_key( $length = 64, $key = 'batch' ) {
 		$unique  = md5( microtime() . wp_rand() );
-		$prepend = $this->identifier . '_' . $key . '_';
+		$prepend = $this->identifier . '_' . $key;
+
+        if( is_multisite() ){
+            $site_id = get_current_blog_id();
+            $prepend .= '_' . $site_id;
+        }
+
+        $prepend .= '_';
 
 		return substr( $prepend . $unique, 0, $length );
 	}
@@ -506,14 +528,15 @@ abstract class WP_Background_Process extends WP_Async_Request {
 		return $this;
 	}
 
-	/**
-	 * Get batch.
-	 *
-	 * @return stdClass Return the first batch of queued items.
-	 */
-	protected function get_batch() {
+    /**
+     * Get batch.
+     *
+     * @param int $for_site_id Get batch for a specific Site ID (multisite)
+     * @return stdClass Return the first batch of queued items.
+     */
+	protected function get_batch($for_site_id = null) {
 		return array_reduce(
-			$this->get_batches( 1 ),
+			$this->get_batches( 1, $for_site_id ),
 			static function ( $carry, $batch ) {
 				return $batch;
 			},
@@ -521,14 +544,14 @@ abstract class WP_Background_Process extends WP_Async_Request {
 		);
 	}
 
-	/**
-	 * Get batches.
-	 *
-	 * @param int $limit Number of batches to return, defaults to all.
-	 *
-	 * @return array of stdClass
-	 */
-	public function get_batches( $limit = 0 ) {
+    /**
+     * Get batches.
+     *
+     * @param int $limit Number of batches to return, defaults to all.
+     * @param int $for_site_id Get batches for a specific Site ID (multisite)
+     * @return array of stdClass
+     */
+	public function get_batches( $limit = 0, $for_site_id = null ) {
 		global $wpdb;
 
 		if ( empty( $limit ) || ! is_int( $limit ) ) {
@@ -547,7 +570,12 @@ abstract class WP_Background_Process extends WP_Async_Request {
 			$value_column = 'meta_value';
 		}
 
-		$key = $wpdb->esc_like( $this->identifier . '_batch_' ) . '%';
+        if( !is_null( $for_site_id ) ) {
+            $key = $wpdb->esc_like( $this->identifier . '_batch_' . $for_site_id ) . '%';
+        }else{
+            $key = $wpdb->esc_like( $this->identifier . '_batch_' ) . '%';
+        }
+
 
 		$sql = '
 			SELECT *
@@ -578,9 +606,12 @@ abstract class WP_Background_Process extends WP_Async_Request {
 
 			$batches = array_map(
 				static function ( $item ) use ( $column, $value_column, $allowed_classes ) {
-					$batch       = new stdClass();
-					$batch->key  = $item->{$column};
-					$batch->data = static::maybe_unserialize( $item->{$value_column}, $allowed_classes );
+					$batch          = new stdClass();
+					$batch->key     = $item->{$column};
+                    if( is_multisite() ){
+                        $batch->site_id = static::extract_site_id_from_column_name($item->{$column});
+                    }
+					$batch->data    = static::maybe_unserialize( $item->{$value_column}, $allowed_classes );
 
 					return $batch;
 				},
@@ -590,6 +621,20 @@ abstract class WP_Background_Process extends WP_Async_Request {
 
 		return $batches;
 	}
+
+    /**
+     * Extract the site ID from the database column name when in a multisite environment
+     *
+     * @param $column_name
+     * @return int|null
+     */
+    protected static function extract_site_id_from_column_name($column_name ) {
+        if ( preg_match( '/_batch_(\d+)_/', $column_name, $matches ) ) {
+            return intval( $matches[1] );
+        }
+
+        return null;
+    }
 
 	/**
 	 * Handle a dispatched request.
@@ -606,7 +651,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
 		 * @param int $seconds
 		 */
 		$throttle_seconds = max(
-			0,
+			$this->seconds_between_batches,
 			apply_filters(
 				$this->identifier . '_seconds_between_batches',
 				apply_filters(
@@ -618,6 +663,18 @@ abstract class WP_Background_Process extends WP_Async_Request {
 
 		do {
 			$batch = $this->get_batch();
+
+            if( is_multisite() && !is_null( $batch->site_id ) && $batch->site_id !== get_current_blog_id() ) {
+
+                //Do not try to run a batch for a site that doesn't exist (anymore)
+                if ( ! get_site( $batch->site_id ) ) {
+                    $this->delete( $batch->key );
+                    continue;
+                }
+
+                switch_to_blog( $batch->site_id );
+                $this->switched_to_blog = true;
+            }
 
 			foreach ( $batch->data as $key => $value ) {
 				$task = $this->task( $value );
@@ -633,9 +690,6 @@ abstract class WP_Background_Process extends WP_Async_Request {
 					$this->update( $batch->key, $batch->data );
 				}
 
-				// Let the server breathe a little.
-				sleep( $throttle_seconds );
-
 				// Batch limits reached, or pause or cancel requested.
 				if ( ! $this->should_continue() ) {
 					break;
@@ -646,6 +700,13 @@ abstract class WP_Background_Process extends WP_Async_Request {
 			if ( empty( $batch->data ) ) {
 				$this->delete( $batch->key );
 			}
+
+            if( $this->switched_to_blog ) {
+                restore_current_blog();
+            }
+
+            // Let the server breathe a little.
+            sleep( $throttle_seconds );
 		} while ( ! $this->is_queue_empty() && $this->should_continue() );
 
 		$this->unlock_process();
