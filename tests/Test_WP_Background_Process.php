@@ -329,7 +329,11 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->assertCount( 2, $this->wpbp->get_batches() );
 		$updated_batch = $this->executeWPBPMethod( 'get_batch' );
 		$this->assertNotEquals( $first_batch, $updated_batch, 'fetched updated batch different to 1st fetch' );
-		$this->assertEquals( array( 'Wibble wobble all day long!' ), $updated_batch->data, 'fetched updated batch has expected data' );
+		$this->assertEquals(
+			array( 'Wibble wobble all day long!' ),
+			$updated_batch->data,
+			'fetched updated batch has expected data'
+		);
 	}
 
 	/**
@@ -366,6 +370,7 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->assertFalse( $cancelled_fired, 'cancelled action not fired yet' );
 		$this->assertFalse( $paused_fired, 'paused action not fired yet' );
 		$this->assertFalse( $completed_fired, 'completed action not fired yet' );
+		$_REQUEST['nonce'] = wp_create_nonce( $this->getWPBPProperty( 'identifier' ) );
 		$this->wpbp->maybe_handle();
 		$this->assertCount( 0, $this->wpbp->get_batches() );
 		$this->assertTrue( $cancelled_fired, 'cancelled action fired' );
@@ -413,6 +418,7 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->assertFalse( $paused_fired, 'paused action not fired yet' );
 		$this->assertFalse( $resumed_fired, 'resumed action not fired yet' );
 		$this->assertFalse( $completed_fired, 'completed action not fired yet' );
+		$_REQUEST['nonce'] = wp_create_nonce( $this->getWPBPProperty( 'identifier' ) );
 		$this->wpbp->maybe_handle();
 		$this->assertCount( 2, $this->wpbp->get_batches() );
 		$this->assertFalse( $cancelled_fired, 'cancelled action still not fired yet' );
@@ -434,7 +440,6 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 
 		// Don't expect resumed to be fired again, and batches to be handled with valid security.
 		$resumed_fired     = false;
-		$_REQUEST['nonce'] = wp_create_nonce( $this->getWPBPProperty( 'identifier' ) );
 		$this->wpbp->maybe_handle();
 		$this->assertCount( 0, $this->wpbp->get_batches(), 'after resume all batches processed with maybe_handle' );
 		$this->assertFalse( $cancelled_fired, 'cancelled action still not fired yet' );
@@ -520,6 +525,7 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->assertFalse( $resumed_fired, 'resumed action not fired yet' );
 		$this->assertFalse( $completed_fired, 'completed action not fired yet' );
 
+		$_REQUEST['nonce'] = wp_create_nonce( $this->getWPBPProperty( 'identifier' ) );
 		$this->wpbp->maybe_handle();
 		$this->assertCount( 0, $this->wpbp->get_batches(), 'after resume all batches processed with maybe_handle' );
 		$this->assertFalse( $cancelled_fired, 'cancelled action still not fired yet' );
@@ -543,6 +549,7 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->wpbp->push_to_queue( 'wibble' );
 		$this->wpbp->save();
 		$this->assertCount( 1, $this->wpbp->get_batches() );
+		$_REQUEST['nonce'] = wp_create_nonce( $this->getWPBPProperty( 'identifier' ) );
 		$this->wpbp->maybe_handle();
 		$this->assertCount( 1, $this->wpbp->get_batches() );
 
@@ -550,7 +557,6 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->executeWPBPMethod( 'unlock_process' );
 		$this->assertFalse( $this->wpbp->is_processing(), 'not processing yet' );
 		$this->assertCount( 1, $this->wpbp->get_batches() );
-		$_REQUEST['nonce'] = wp_create_nonce( $this->getWPBPProperty( 'identifier' ) );
 		$this->wpbp->maybe_handle();
 		$this->assertCount( 0, $this->wpbp->get_batches() );
 		$this->assertFalse( $this->wpbp->is_processing(), 'not left processing on complete' );
@@ -629,6 +635,7 @@ class Test_WP_Background_Process extends WP_UnitTestCase {
 		$this->assertTrue( $this->wpbp->is_active(), 'cancelling, so now active' );
 
 		add_filter( $this->getWPBPProperty( 'identifier' ) . '_wp_die', '__return_false' );
+		$_REQUEST['nonce'] = wp_create_nonce( $this->getWPBPProperty( 'identifier' ) );
 		$this->wpbp->maybe_handle();
 		$this->assertFalse( $this->wpbp->is_active(), 'cancel handled, so no longer active' );
 
