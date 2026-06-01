@@ -2,16 +2,18 @@ workflows:
   version: 2
   main:
     jobs:
-      - php72-build
-      - php73-build
-      - php74-build
       - php80-build
+      - php81-build
+      - php82-build
+      - php83-build
+      - php84-build
+      - php85-build
 
 version: 2
 
 job-references:
   mysql_image: &mysql_image
-    cimg/mysql:5.7
+    cimg/mysql:8.0
 
   setup_environment: &setup_environment
     name: "Setup Environment Variables"
@@ -44,42 +46,6 @@ job-references:
             make test-style
 
 jobs:
-  php56-build:
-    <<: *php_job
-    docker:
-      - image: cimg/php:5.6
-      - image: *mysql_image
-
-  php70-build:
-    <<: *php_job
-    docker:
-      - image: cimg/php:7.0
-      - image: *mysql_image
-
-  php71-build:
-    <<: *php_job
-    docker:
-      - image: cimg/php:7.1
-      - image: *mysql_image
-
-  php72-build:
-    <<: *php_job
-    docker:
-      - image: cimg/php:7.2
-      - image: *mysql_image
-
-  php73-build:
-    <<: *php_job
-    docker:
-      - image: cimg/php:7.3
-      - image: *mysql_image
-
-  php74-build:
-    <<: *php_job
-    docker:
-      - image: cimg/php:7.4
-      - image: *mysql_image
-
   php80-build:
     <<: *php_job
     docker:
@@ -90,4 +56,28 @@ jobs:
     <<: *php_job
     docker:
       - image: cimg/php:8.1
+      - image: *mysql_image
+
+  php82-build:
+    <<: *php_job
+    docker:
+      - image: cimg/php:8.2
+      - image: *mysql_image
+
+  php83-build:
+    <<: *php_job
+    docker:
+      - image: cimg/php:8.3
+      - image: *mysql_image
+
+  php84-build:
+    <<: *php_job
+    docker:
+      - image: cimg/php:8.4
+      - image: *mysql_image
+
+  php85-build:
+    <<: *php_job
+    docker:
+      - image: cimg/php:8.5
       - image: *mysql_image
