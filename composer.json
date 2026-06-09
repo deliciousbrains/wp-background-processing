@@ -25,7 +25,7 @@
     "yoast/phpunit-polyfills": "^1.0",
     "spryker/code-sniffer": "^0.17.18",
     "phpcompatibility/phpcompatibility-wp": "*",
-    "wp-coding-standards/wpcs": "^2.3"
+    "wp-coding-standards/wpcs": "^3"
   },
   "config": {
     "allow-plugins": {

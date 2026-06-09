@@ -41,7 +41,9 @@
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
 			<!-- Value: replace the function, class, and variable prefixes used. Separate multiple prefixes with a comma. -->
-			<property name="prefixes" type="array" value="wpbp"/>
+			<property name="prefixes" type="array">
+				<element value="wpbp"/>
+			</property>
 		</properties>
 
 		<!-- TODO: Maybe fix -->
@@ -50,7 +52,9 @@
 	<rule ref="WordPress.WP.I18n">
 		<properties>
 			<!-- Value: replace the text domain used. -->
-			<property name="text_domain" type="array" value="wp-background-processing"/>
+			<property name="text_domain" type="array">
+				<element value="wp-background-processing"/>
+			</property>
 		</properties>
 
 		<!-- TODO: Should fix -->

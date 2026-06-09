@@ -175,11 +175,11 @@ abstract class WP_Async_Request {
 	/**
 	 * Should the process exit with wp_die?
 	 *
-	 * @param mixed $return What to return if filter says don't die, default is null.
+	 * @param mixed $default_return What to return if filter says don't die, default is null.
 	 *
 	 * @return void|mixed
 	 */
-	protected function maybe_wp_die( $return = null ) {
+	protected function maybe_wp_die( $default_return = null ) {
 		/**
 		 * Should wp_die be used?
 		 *
@@ -189,7 +189,7 @@ abstract class WP_Async_Request {
 			wp_die();
 		}
 
-		return $return;
+		return $default_return;
 	}
 
 	/**

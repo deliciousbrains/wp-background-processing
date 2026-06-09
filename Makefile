@@ -12,7 +12,15 @@ test-style: vendor
 vendor: composer.json
 	composer install --ignore-platform-reqs
 
+.PHONY: update-deps
+update-deps:
+	composer update --with-all-dependencies
+
 .PHONY: clean
 clean:
-	rm -rf vendor
 	rm -f tests/.phpunit.result.cache .phpunit.result.cache
+
+.PHONY: clean-all
+clean-all: clean
+	rm -rf vendor
+	rm -f composer.lock coverage.clover
