@@ -633,8 +633,10 @@ abstract class WP_Background_Process extends WP_Async_Request {
 					$this->update( $batch->key, $batch->data );
 				}
 
-				// Let the server breathe a little.
-				sleep( $throttle_seconds );
+				if ( $throttle_seconds !== 0 ) {
+					// Let the server breathe a little.
+					sleep( $throttle_seconds );
+				}
 
 				// Batch limits reached, or pause or cancel requested.
 				if ( ! $this->should_continue() ) {
