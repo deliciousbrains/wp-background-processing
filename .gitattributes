@@ -1,0 +1,11 @@
+# Exclude development-only files from Composer/`git archive` distributions.
+/tests            export-ignore
+/bin              export-ignore
+/Makefile         export-ignore
+/phpunit.xml      export-ignore
+/.phpcs.xml       export-ignore
+/.circleci        export-ignore
+/.github          export-ignore
+/composer.lock    export-ignore
+/.gitattributes   export-ignore
+/.gitignore       export-ignore
