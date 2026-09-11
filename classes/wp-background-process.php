@@ -793,17 +793,24 @@ abstract class WP_Background_Process extends WP_Async_Request {
 	 *
 	 * Restart the background process if not already running
 	 * and data exists in the queue.
+	 *
+	 * Returns rather than exits, as a cron callback shares its process with
+	 * whatever is running the event. Under wp-cron.php that is the rest of the
+	 * due events, and under WP-CLI the whole `wp cron event run` command.
+	 *
+	 * @return void
 	 */
 	public function handle_cron_healthcheck() {
 		if ( $this->is_processing() ) {
 			// Background process already running.
-			exit;
+			return;
 		}
 
 		if ( $this->is_queue_empty() ) {
 			// No data to process.
 			$this->clear_scheduled_event();
-			exit;
+
+			return;
 		}
 
 		$this->dispatch();
