@@ -180,12 +180,17 @@ abstract class WP_Async_Request {
 	 * @return void|mixed
 	 */
 	protected function maybe_wp_die( $default_return = null ) {
+		// Outside a web request there is no request to end, and dying takes the
+		// calling process with it. Under WP-CLI that means a command which reaches
+		// the handler exits part way through, with whatever status wp_die() sets.
+		$should_die = 'cli' !== PHP_SAPI;
+
 		/**
 		 * Should wp_die be used?
 		 *
 		 * @return bool
 		 */
-		if ( apply_filters( $this->identifier . '_wp_die', true ) ) {
+		if ( apply_filters( $this->identifier . '_wp_die', $should_die ) ) {
 			wp_die();
 		}
 
