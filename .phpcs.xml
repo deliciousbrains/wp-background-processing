@@ -30,6 +30,7 @@
 	<rule ref="WordPress">
 		<!-- Unable to fix -->
 		<exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+		<exclude name="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound"/>
 		<exclude name="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedClassFound"/>
 		<exclude name="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound"/>
 		<exclude name="WordPress.DB.DirectDatabaseQuery.NoCaching"/>

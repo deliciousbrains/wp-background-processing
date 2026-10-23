@@ -5,6 +5,8 @@
  * @package WP-Background-Processing
  */
 
+namespace WP_Background_Processing;
+
 /**
  * Abstract WP_Async_Request class.
  *
