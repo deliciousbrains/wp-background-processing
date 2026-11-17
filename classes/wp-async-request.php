@@ -142,7 +142,8 @@ abstract class WP_Async_Request {
 			'timeout'   => 5,
 			'blocking'  => false,
 			'body'      => $this->data,
-			'cookies'   => $_COOKIE, // Passing cookies ensures request is performed as initiating user.
+			// Passing cookies ensures request is performed as initiating user. Unslash only after wp_magic_quotes().
+			'cookies'   => did_action( 'sanitize_comment_cookies' ) ? wp_unslash( $_COOKIE ) : $_COOKIE,
 			'sslverify' => apply_filters( 'https_local_ssl_verify', false ), // Local requests, fine to pass false.
 		);
 
